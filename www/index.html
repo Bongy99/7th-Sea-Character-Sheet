@@ -70,6 +70,43 @@ const get=p=>p.split('.').reduce((o,k)=>o?.[k],S);
 const put=(p,v)=>{const k=p.split('.'),l=k.pop();k.reduce((o,x)=>o[x],S)[l]=v};
 const I=(p,l,t='text')=>`<div><label>${l}</label><input type="${t}" data-p="${p}" value="${esc(get(p))}"></div>`;
 const T=(p,l)=>`<div><label>${l}</label><textarea data-p="${p}">${esc(get(p))}</textarea></div>`;
+
+// post-processing: ogni stregoneria -> poteri singoli con gruppo (g)
+const CFG7=[
+ [/hexenwerk/,[['Unguenti',null],['Unguenti Maggiori','Unguenti Maggiori',1],['Unguenti Minori','Unguenti Minori',1]]],
+ [/cavalieri/,[['Il Gesa del Cavaliere','Regole'],['I Cavalieri di Elilodd','Cavalieri di Elilodd',1],['Gli Incanti','Fortuna',1],['Battere gli Sgherri','Incanti']]],
+ [/dar_matushki/,[['Doni','Doni',1],['Restrizioni','Restrizioni',1]]],
+ [/^sorc:porté$/,[['Trarre','Regole'],['Marchi Minori','Marchi Minori'],['Marchi Maggiori','Marchi Maggiori']]],
+ [/sanderis|melbur/,[['Patti','Regole']]],
+ [/sorte/,[['Punti Eroe e Staffilate','Regole'],['Lettura','Trame'],['Arcani','Trame']]],
+ [/secondo_profeta/,[['Miracoli','Miracoli',1],['Cammini','Cammini',1]]],
+ [/chozeh/,[['Creare Amuleti e Scritti','Regole']]],
+ [/khahesh/,[['Ahura','Ahura'],['Arsalan, Angelo degli Animali e del Giudizio','Angeli'],['Eredità Comuni','Eredità Comuni',1],['Eredità Rare','Eredità Rare',1]]],
+ [/mithaq/,[['Thiqa','Regole'],['Armonia d’Intenti','Poteri']]],
+ [/heka/,[['Creare e Attivare Talismani e Iscrizioni','Regole']]],
+ [/tocco_rosso/,[['Distruzioni','Distruzioni',1]]],
+ [/zahmeireen/,[['Origine','Origine'],['Sfaccettature','Sfaccettature',1],['Leggende','Leggende',1]]],
+ [/alquimia/,[['Il Laboratorium','Regole'],['Juvenilia','Opere']]],
+ [/galdr/,[['La “Maledizione” Galdr','Regole'],['Bestia','Rune']]],
+ [/tur_/,[['Dono','Regole'],['Linguaggio degli Uccelli','Doni']]],
+ [/wañuy/,[['Simboli di Morte','Regole'],['Manifestazioni e Alterazioni','Regole']]],
+ [/wayak/,[['Ahpulul','Regole'],['Anelli delle Orecchie di Kinich Ahau','Reliquie'],['Pixan','Reliquie Minori']]]
+];
+function post7(k,items){
+ const rule=CFG7.find(c=>c[0].test(k));const R=rule?rule[1]:[];let g='',res=[];
+ for(const i of items){const r=R.find(x=>x[0]===i.n);let drop=false;
+  if(r){g=r[1]||'';drop=!r[1]||r[2]}
+  const ri=i.r;delete i.r;if(drop)continue;
+  if(ri&&!/cavalieri/.test(k)&&!(r&&r[1]))i.g=ri;else if(g)i.g=g;
+  if(/sanderis|melbur/.test(k)&&/Favori (Maggiori|Minori):/.test(i.d)){
+   const el=i.n;const parts=i.d.split(/(?=Favori (?:Maggiori|Minori):)/);
+   for(const p of parts){const m=p.match(/^Favori (Maggiori|Minori):\s*(.*)$/);if(!m)continue;
+    m[2].split(/\s*•\s*/).filter(x=>x.length>8).forEach(b=>{
+     const nm=b.split(/[,.;:]/)[0].split(' ').slice(0,7).join(' ');
+     res.push({n:nm+' ('+el+')',g:'Patto '+el+' · Favori '+m[1],d:b})})}
+   continue}
+  res.push(i)}
+ return res}
 function mkParser7(){
  const out={bg:[],adv:[],arc:[],nat:{},lists:{}};
  const SK=['Allettare','Arte della Guerra','Atletica','Cavalcare','Convincere','Empatia','Esibirsi','Furto','Intimidire','Istruzione','Mira','Mischia','Nascondersi','Navigazione','Notare','Rissa'];
@@ -131,7 +168,8 @@ function mkParser7(){
    for(const l of L){
     const t=l.txt,body=/AJenson/i.test(l.f);
     const h1=isH18(l),h2=isH14(l),h3=isH12(l)||isIt(l);
-    if(h1||h2){finNat();finBlk();finAdv();finStil();if(sec&&h1){finSec();sec=null}}
+    if(h1||h2){finNat();finBlk();finAdv();finStil();if(sec&&h1&&sec.items.length){finSec();sec=null}}
+    if(h1&&sec){lastH1=t;continue}
     if(h1){lastH1=t;mode='';cur=null;
      if(/Nuovi Vantaggi/i.test(t))mode='adv0';else if(/Nuovi Background|Passo 3: Background/i.test(t))mode='bg0';
      continue}
@@ -184,10 +222,15 @@ function mkParser7(){
    }
   },
   result(){finBlk();finAdv();finSec();finStil();out.arc=out.arc.filter(a=>a.v&&a.h);
-   for(const k of Object.keys(out.lists)){const L=out.lists[k];L.items=L.items.filter(i=>i.d.length>=25&&!/^Passo\b/.test(i.n));if(/^sorc:sequenz|^sorc:capitolo/.test(k)||!L.items.length)delete out.lists[k]}
+   for(const k of Object.keys(out.lists)){const L=out.lists[k];
+    if(k.startsWith('sorc:')){const cnt={};L.items.forEach(i=>{cnt[i.n]=(cnt[i.n]||0)+1});const res=[];
+     L.items.forEach(i=>{if(cnt[i.n]>=3&&res.length){const p=res[res.length-1];p.d=cl(p.d+' '+i.n+': '+i.d)}else res.push(i)});L.items=res}
+   if(k.startsWith('sorc:'))L.items=post7(k,L.items);
+   L.items=L.items.filter(i=>i.d.length>=25&&!/^Passo\b/.test(i.n));if(/^sorc:sequenz|^sorc:capitolo/.test(k)||!L.items.length)delete out.lists[k]}
    out.adv.forEach(a=>{delete a.open;delete a._hd});
    out.bg.forEach(b=>{b.d=cl(b.d);b.pec=cl(b.pec);b.res=cl(b.res);b.naz=b.naz.replace(/^(del|della|dello|dei)\s+(?=\S+$)/i,'');delete b._hd;delete b._hpec;delete b._hres});return out}
  }}
+if(typeof module!='undefined')module.exports=mkParser7;
 
 // ---------- catalogo importato ----------
 const CK='ss-cat-v1';let CAT={v:0,bg:[],adv:[],arc:[],nat:{},lists:{}};
@@ -264,8 +307,8 @@ const SECS=[
 ()=>{const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);return `<div class="card"><h2>Dettagli</h2><div class="g2">${I('c.fama','Fama (un aggettivo)')}${I('c.ling','Lingue (una per Grado di Acume: '+c.tr.acu+')')}${I('c.soc','Società Segreta')}${I('c.fav','Favore verso la società','number')}${I('c.ric','Ricchezza (punti a inizio sessione)','number')}</div></div>
  <div class="card"><h2>Ferite · Spirale della Morte</h2><div class="row" style="align-items:center">${spiral(c)}<div style="flex:1"><div class="big">${w} <span class="hint">Ferite</span> · ${d} <span class="hint">★ Drammatiche</span></div>${ef.length?ef.map(e=>`<div class="${e=='INERME'?'crisi':'hint'}">• ${e}</div>`).join(''):'<div class="hint">Nessun effetto.</div>'}<div class="row" style="margin-top:8px"><button class="o" data-act="ferclr">Azzera ferite</button></div></div></div><p class="hint">Tocca una casella per riempire la spirale fino a lì; toccala di nuovo per svuotare da lì in poi. Le stelle sono le Ferite Drammatiche.</p></div>`},
 ()=>{const c=S.c,L=CAT.lists,ks=Object.keys(L);if(ks.length&&!L[lsSel])lsSel=ks[0];
- return `${CAT.v?catCard():''}${fltCard()}<div class="card"><h2>Stregonerie, Stili di Duello e altro</h2>${c.pot.map((p,i)=>`<div class="item"><div class="row"><b class="wn" style="flex:1">${esc(p.n)}</b><span class="chip">${esc(p.k||'')}</span></div><input type="text" data-p="c.pot.${i}.nota" value="${esc(p.nota||'')}" placeholder="Grado / note">${p.d?`<details><summary class="mut">Descrizione</summary><p>${nl(p.d)}</p></details>`:''}<button class="x" data-act="delpot" data-i="${i}">Rimuovi</button></div>`).join('')||'<p class="mut">Nulla di scelto.</p>'}<button class="o" data-act="addpotm">+ Voce manuale</button></div>
- ${ks.length?`<div class="card"><h2>Dal catalogo</h2><select id="lsc">${ks.map(k=>`<option value="${esc(k)}" ${k==lsSel?'selected':''}>${esc(L[k].t)}</option>`).join('')}</select>${L[lsSel].items.map((it,j)=>{const o=c.pot.some(p=>p.n==it.n&&p.k==L[lsSel].t);return `<div class="mw" data-n="${esc(it.n.toLowerCase())}"${hid(it.n)}><div class="row"><b class="wn" style="flex:1">${esc(it.n)}</b><button class="${o?'o':''}" data-act="addpot" data-j="${j}" ${o?'disabled':''}>${o?'✓ Aggiunto':'+ Aggiungi'}</button></div>${it.r?`<div class="hint">${esc(it.r)}</div>`:''}<details><summary class="mut">Descrizione${it.s?' · '+esc(it.s):''}</summary><p>${nl(it.d)}</p></details></div>`}).join('')}</div>`:`<div class="card"><p class="mut">Importa i manuali (in <b>Background e Vantaggi</b>) per avere le liste di stregonerie e stili di duello.</p></div>`}`},
+ return `${CAT.v?catCard():''}${fltCard()}<div class="card"><h2>Stregonerie, Stili di Duello e altro</h2>${(()=>{const ord=[];c.pot.forEach((p,i)=>{const k=p.k||'Altro';if(!ord.includes(k))ord.push(k)});return ord.map(k=>`<h3>${esc(k)} <span class="chip">${c.pot.filter(p=>(p.k||'Altro')==k).length}</span></h3>`+c.pot.map((p,i)=>(p.k||'Altro')==k?`<div class="item"><div class="row"><b class="wn" style="flex:1">${esc(p.n)}</b>${p.g?`<span class="chip">${esc(p.g)}</span>`:''}</div><input type="text" data-p="c.pot.${i}.nota" value="${esc(p.nota||'')}" placeholder="Grado / note">${p.d?`<details><summary class="mut">Descrizione</summary><p>${nl(p.d)}</p></details>`:''}<button class="x" data-act="delpot" data-i="${i}">Rimuovi</button></div>`:'').join('')).join('')})()||'<p class="mut">Nulla di scelto.</p>'}<button class="o" data-act="addpotm">+ Voce manuale</button></div>
+ ${ks.length?`<div class="card"><h2>Dal catalogo</h2><select id="lsc">${ks.map(k=>`<option value="${esc(k)}" ${k==lsSel?'selected':''}>${esc(L[k].t)}${c.pot.filter(p=>p.k==L[k].t).length?' ✓'+c.pot.filter(p=>p.k==L[k].t).length:''}</option>`).join('')}</select>${(()=>{let lg=null;return L[lsSel].items.map((it,j)=>{const o=c.pot.some(p=>p.n==it.n&&p.k==L[lsSel].t);const gh=(it.g||'')!==lg?(lg=it.g||'',lg?`<h3>${esc(lg)}</h3>`:''):'';return gh+`<div class="mw" data-n="${esc(it.n.toLowerCase())}"${hid(it.n)}><div class="row"><b class="wn" style="flex:1">${esc(it.n)}</b><button class="${o?'o':''}" data-act="addpot" data-j="${j}">${o?'✓ Scelto (tocca per togliere)':'+ Scegli'}</button></div><details><summary class="mut">Descrizione${it.s?' · '+esc(it.s):''}</summary><p>${nl(it.d)}</p></details></div>`}).join('')})()}</div>`:`<div class="card"><p class="mut">Importa i manuali (in <b>Background e Vantaggi</b>) per avere le liste di stregonerie e stili di duello.</p></div>`}`},
 ()=>`<div class="card"><h2>Armi e oggetti importanti</h2>${S.c.arm.map((a,i)=>`<div class="item"><div class="g2">${I(`c.arm.${i}.n`,'Nome')}${T(`c.arm.${i}.d`,'Descrizione ed effetti')}</div><button class="x" data-act="delarm" data-i="${i}">Rimuovi</button></div>`).join('')}<button class="o" data-act="addarm">+ Aggiungi</button></div><div class="card"><h2>Nave</h2>${T('c.nave','Nome, Background e dettagli della nave')}</div><div class="card"><h2>Note</h2>${T('c.note','Note')}</div><div class="card"><button class="x" data-act="reset">Azzera questa scheda</button></div>`];
 function riep(){const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);
  const box=(l,v,i)=>`<div class="mb"><span>${l}</span><b>${v}</b>${i?`<i>${i}</i>`:''}</div>`;
@@ -279,7 +322,7 @@ function riep(){const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);
  <h3>Background</h3>${c.bg.map(b=>{const f=bgF(b.n,b.naz)||{};return `<div class="mw"><b class="wn">${esc(b.n)}</b>${b.naz?' · '+esc(b.naz):''}${f.d?`<div class="hint">${esc(f.d)}</div>`:''}<p><i>Peculiarità:</i> ${esc(b.pec)}</p></div>`}).join('')||'<p class="mut">Nessuno.</p>'}
  <h3>Vantaggi</h3>${c.adv.map(a=>{const f=advF(a.n)||{};return `<div class="mw"><b class="wn">${esc(a.n)}</b>${a.nota?' ('+esc(a.nota)+')':''}${f.d?`<p>${nl(f.d)}</p>`:''}</div>`}).join('')||'<p class="mut">Nessuno.</p>'}
  <h3>Arcani</h3>${v?`<div class="mw"><b class="wn">Virtù: ${esc(v.v)}</b> (${esc(v.carta)})<p>${nl(v.vd)}</p></div>`:''}${h?`<div class="mw"><b class="wn">Hubris: ${esc(h.h)}</b> (${esc(h.carta)})<p>${nl(h.hd)}</p></div>`:''}${!v&&!h?`<p>${esc([c.virt.n&&'Virtù: '+c.virt.n,c.hub.n&&'Hubris: '+c.hub.n].filter(Boolean).join(' · '))||'<span class="mut">Nessuno.</span>'}</p>`:''}
- ${c.pot.length?'<h3>Stregoneria e Stili</h3>'+c.pot.map(p=>`<div class="mw"><b class="wn">${esc(p.n)}</b> <span class="chip">${esc(p.k||'')}</span>${p.nota?' ('+esc(p.nota)+')':''}${p.d?`<p>${nl(p.d)}</p>`:''}</div>`).join(''):''}
+ ${c.pot.length?'<h3>Stregoneria e Stili</h3>'+[...c.pot].sort((x,y)=>(x.k||'').localeCompare(y.k||'')).map(p=>`<div class="mw"><b class="wn">${esc(p.n)}</b> <span class="chip">${esc(p.k||'')}${p.g?' · '+esc(p.g):''}</span>${p.nota?' ('+esc(p.nota)+')':''}${p.d?`<p>${nl(p.d)}</p>`:''}</div>`).join(''):''}
  <h3>Storie</h3>${c.storie.filter(s=>s.tema||s.concl).map(s=>`<div class="mw"><b class="wn">${esc(s.tema)}</b>${s.concl?`<p><i>Conclusione:</i> ${esc(s.concl)}</p>`:''}${s.ric?`<p><i>Ricompensa:</i> ${esc(s.ric)}</p>`:''}${s.atti.map((a,j)=>`<div>${a.d?'☑':'☐'} Atto ${j+1}: ${esc(a.t)}</div>`).join('')}</div>`).join('')||'<p class="mut">Nessuna.</p>'}
  <h3>Dettagli</h3><p>${[c.ling&&'<b>Lingue:</b> '+esc(c.ling),c.soc&&'<b>Società:</b> '+esc(c.soc)+' (Favore '+c.fav+')'].filter(Boolean).join('<br>')||'<span class="mut">—</span>'}</p>
  ${c.arm.filter(a=>a.n||a.d).length?'<h3>Oggetti</h3>'+c.arm.filter(a=>a.n||a.d).map(a=>`<div class="mw"><b class="wn">${esc(a.n)}</b>${a.d?`<p>${nl(a.d)}</p>`:''}</div>`).join(''):''}${c.nave?`<h3>Nave</h3><p>${nl(c.nave)}</p>`:''}</div>`}
@@ -333,7 +376,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(
  else if(a=='delstoria')c.storie.splice(i,1);
  else if(a=='addatto')c.storie[i].atti.push({t:'',d:0});
  else if(a=='delatto')c.storie[i].atti.splice(j,1);
- else if(a=='addpot'){const L=CAT.lists[lsSel],it=L.items[j];c.pot.push({n:it.n,k:L.t,d:it.d,nota:''})}
+ else if(a=='addpot'){const L=CAT.lists[lsSel],it=L.items[j],x=c.pot.findIndex(p=>p.n==it.n&&p.k==L.t);if(x>=0)c.pot.splice(x,1);else c.pot.push({n:it.n,k:L.t,g:it.g||'',d:it.d,nota:''})}
  else if(a=='addpotm')c.pot.push({n:'Nuova voce',k:'',d:'',nota:''});
  else if(a=='delpot')c.pot.splice(i,1);
  else if(a=='addarm')c.arm.push({n:'',d:''});
