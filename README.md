@@ -33,4 +33,4 @@ separato da quello di Safari. Conviene usare sempre e solo l'icona installata.
 Nella scheda, sezione **3. Background e Vantaggi**, usa **Manuali** e scegli i PDF di 7th Sea Seconda Edizione
 (Manuale Base, Impero della Mezzaluna, Terre dell'Oro e del Fuoco, Nazioni di Théah 1 e 2, Nuovo Mondo): puoi
 sceglierne più d'uno insieme. L'app legge sul dispositivo Background, Vantaggi, Arcani, bonus di nazione e le liste di
-stregoneria e Stili di Duello; il testo dei manuali **non** è incluso nell'app e resta solo sul tuo dispositivo.
+stregoneria, Stili di Duello e Manovre di Duello (dal Manuale Base; compaiono nel Riepilogo quando l'Eroe ha il Vantaggio Sala d'Armi); il testo dei manuali **non** è incluso nell'app e resta solo sul tuo dispositivo.
