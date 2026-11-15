@@ -62,7 +62,7 @@ const KEY='ss-app-v1';
 const def=()=>({c:{nome:'',naz:'',conc:'',asp:'',mot:'',tr:{vig:2,gra:2,ris:2,acu:2,pan:2},ab:{},bg:[],adv:[],virt:{n:'',carta:''},hub:{n:'',carta:''},storie:[{tema:'',concl:'',ric:'',atti:[{t:'',d:0}]}],fama:'',ling:'',soc:'',fav:2,ric:0,fer:Array(20).fill(0),ph:1,pot:[],arm:[],zaino:[],nave:'',note:''}});
 let S={chars:[],gm:{pp:0,storie:[],note:''},cur:null,c:null},tab='home',sec=0;
 try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.chars)S=Object.assign(S,j)}catch(e){}
-S.gm=S.gm||{pp:0,storie:[],note:''};S.c=S.chars[S.cur]||null;
+S.gm=S.gm||{pp:0,storie:[],note:''};S.gm.vill=S.gm.vill||[];S.gm.sq=S.gm.sq||[];S.c=S.chars[S.cur]||null;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({chars:S.chars,gm:S.gm,cur:S.cur}))}catch(e){}};
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const nl=x=>esc(x).replace(/\n/g,'<br>');
@@ -512,9 +512,7 @@ const rkNote=r=>r>=5?'i 10 esplodono':r>=4?'2 Incrementi con somma 15':r>=3?'ril
 const drm=c=>c.fer.reduce((a,v,i)=>a+(v&&i%5==4?1:0),0),wnd=c=>c.fer.reduce((a,v)=>a+(v?1:0),0);
 const hasSala=c=>c.adv.some(a=>/sala d.\s?arm/i.test(a.n||''));
 const MANORD=['Fendente','Botta','Parata','Risposta','Finta','Affondo'];
-function manH(c){const L=(CAT.lists.manovre&&CAT.lists.manovre.items)||[],ml=c.ab['Mischia']||0;
- const it=MANORD.map(n=>L.find(x=>x.n==n)||{n,d:''}).concat(L.filter(x=>!MANORD.includes(x.n)));
- return '<h3>Manovre di Duello</h3><div class="hint">Concesse da Sala d’Armi · Grado di Mischia: <b>'+ml+'</b>. Costo: 1 Incremento per Manovra; mai la stessa Manovra due volte di seguito.</div>'+it.map(x=>`<div class="mw"><b class="wn">${esc(x.n)}</b>${x.d?`<p>${nl(x.d)}</p>`:''}</div>`).join('')+(L.length?'':'<div class="hint">Descrizioni non importate: importa il Manuale Base per leggerle qui.</div>')}
+function manH(c){return manX(c.ab['Mischia']||0,'Concesse da Sala d’Armi')}
 const hasAdv=(c,n)=>c.adv.some(a=>a.n.toLowerCase()==n.toLowerCase());
 const effects=c=>{const d=drm(c),m=hasAdv(c,'Duro da Uccidere')?5:4,o=[];
  if(d>=1)o.push('1 Dado Bonus su tutti i Rischi');
@@ -565,7 +563,131 @@ function riep(){const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);
  <h3>Storie</h3>${c.storie.filter(s=>s.tema||s.concl).map(s=>`<div class="mw"><b class="wn">${esc(s.tema)}</b>${s.concl?`<p><i>Conclusione:</i> ${esc(s.concl)}</p>`:''}${s.ric?`<p><i>Ricompensa:</i> ${esc(s.ric)}</p>`:''}${s.atti.map((a,j)=>`<div>${a.d?'☑':'☐'} Atto ${j+1}: ${esc(a.t)}</div>`).join('')}</div>`).join('')||'<p class="mut">Nessuna.</p>'}
  <h3>Dettagli</h3><p>${[c.ling&&'<b>Lingue:</b> '+esc(c.ling),c.soc&&'<b>Società:</b> '+esc(c.soc)+' (Favore '+c.fav+')'].filter(Boolean).join('<br>')||'<span class="mut">—</span>'}</p>
  ${c.arm.filter(a=>a.n||a.d).length?'<h3>Oggetti</h3>'+c.arm.filter(a=>a.n||a.d).map(a=>`<div class="mw"><b class="wn">${esc(a.n)}</b>${a.d?`<p>${nl(a.d)}</p>`:''}</div>`).join(''):''}${c.nave?`<h3>Nave</h3><p>${nl(c.nave)}</p>`:''}</div>`}
-function gm(){const g=S.gm;return `<div class="card"><h2>Riserva di Pericolo</h2><div class="cur" style="justify-content:center"><button class="o" data-act="adj" data-p="gm.pp" data-d="-1">−</button><input type="number" data-p="gm.pp" value="${g.pp}" style="width:90px;font-size:22px"><button class="o" data-act="adj" data-p="gm.pp" data-d="1">+</button></div><p class="hint">All'inizio di ogni sessione il GM ha 1 Punto Pericolo per ogni Eroe (${S.chars.length} salvati).</p><div class="row" style="justify-content:center"><button class="o" data-act="ppreset">Imposta = numero di Eroi</button></div></div>
+// ---------- Malvagi (GM) ----------
+let gmt='gen',gv=-1,vsec='Profilo',vls='';
+const VSEC=['Profilo','Vantaggi','Arcani','Stregoneria e Duello','Macchinazioni','Mostro','Riepilogo'];
+const QMN=['Acquatico','Alato','Chitinoso','Elementale','Evanescente','Inarrestabile','Mutaforma','Non Morto','Notturno','Possente','Rapido','Rigenerante','Teletrasportante','Tentacolare','Terrificante','Velenoso'];
+const vdef=()=>({nome:'',desc:'',mostro:0,forza:5,infl:5,w:0,d:0,virt:{n:'',carta:''},hub:{n:'',carta:''},cv:{n:'',d:''},ch:{n:'',d:''},adv:[],pot:[],qm:[],mac:[],note:''});
+const vfix=V=>Object.assign(vdef(),V);
+const vn=x=>Math.max(0,Math.floor(+x||0));
+const VP=k=>'gm.vill.'+gv+'.'+k;
+function vcalc(V){const F=Math.max(1,vn(V.forza)),I=vn(V.infl),inv=(V.mac||[]).filter(m=>(m.st||'a')=='a').reduce((a,m)=>a+vn(m.inv),0),disp=Math.max(0,I-inv);
+ return{F,I,inv,disp,mal:F+I,dadi:F+disp,gr:Math.ceil(F/2),bud:5+F,sp:(V.adv||[]).reduce((a,x)=>a+(+x.c||0),0),tot:4*(F+1),sub:vn(V.d)*(F+1)+vn(V.w)}}
+function vdmg(V,n){const F=Math.max(1,vn(V.forza));V.w=vn(V.w)+n;V.d=vn(V.d);while(V.w>F&&V.d<4){V.w-=F+1;V.d++}if(V.d>=4)V.w=0}
+const vhasDuel=V=>hasSala(V)||V.pot.some(p=>p.k=='Stili di Duello');
+const vstep=(l,k,mn)=>`<div class="mb"><span>${l}</span><div class="cur"><button class="o" data-act="vl_adj" data-k="${k}" data-min="${mn}" data-d="-1">−</button><input type="number" data-p="${VP(k)}" data-rcc data-min="${mn}" value="${vn(S.gm.vill[gv][k])}" style="width:62px;text-align:center"><button class="o" data-act="vl_adj" data-k="${k}" data-min="${mn}" data-d="1">+</button></div></div>`;
+function vHead(V){const x=vcalc(V),dead=V.d>=4;
+ return `<div class="card"><div class="row"><div style="flex:1">${I(VP('nome'),'Nome del Malvagio')}</div><button class="o" data-act="vl_back">← Elenco</button></div>
+ <div class="g2" style="margin-top:8px">${vstep('Forza','forza',1)}${vstep('Influenza','infl',0)}</div><div class="mg" style="margin-top:8px"><div class="mb"><span>Malvagità</span><b>${x.mal}</b><i>Forza + Influenza</i></div><div class="mb"><span>Dadi max per Rischio</span><b>${x.dadi}</b><i>${x.inv?x.inv+' Influenza investita':'Forza + Influenza'}</i></div><div class="mb"><span>Grado per Abilità/Tratti</span><b>${x.gr}</b><i>metà Forza, per eccesso</i></div></div>
+ <h3>Ferite</h3><div class="mg"><div class="mb"><span>Ferite in questa sezione</span><b>${vn(V.w)}/${x.F}</b><i>la ${x.F+1}ª è Drammatica</i></div><div class="mb"><span>Ferite Drammatiche</span><b>${'★'.repeat(vn(V.d))}${'☆'.repeat(4-vn(V.d))}</b><i>4 = Inerme</i></div><div class="mb"><span>Totale subito</span><b>${x.sub}/${x.tot}</b></div></div>
+ <div class="row" style="margin-top:6px"><button class="o" data-act="vl_dmg" data-d="1">+1</button><button class="o" data-act="vl_dmg" data-d="3">+3</button><button class="o" data-act="vl_dmg" data-d="5">+5</button><input id="vdn" type="number" value="1" min="1" style="width:70px"><button data-act="vl_dmgn">Infliggi</button><button class="o" data-act="vl_heal" data-d="1">−1 Ferita</button><button class="o" data-act="vl_dr" data-d="-1">−1 ★</button><button class="x" data-act="vl_clr">Azzera</button></div>
+ ${dead?'<div class="crisi" style="margin-top:6px">INERME — Malvagio sconfitto</div>':''}
+ <div class="row" style="margin-top:8px;align-items:center"><b>Punti Pericolo del GM</b><div class="cur"><button class="o" data-act="adj" data-p="gm.pp" data-d="-1">−</button><input type="number" data-p="gm.pp" value="${S.gm.pp}"><button class="o" data-act="adj" data-p="gm.pp" data-d="1">+</button></div></div>
+ <p class="hint">Pressione Malvagia: 1 Incremento + 1 Punto Pericolo applicano la stessa Pressione a tutti gli Eroi in Scena (superabile con 1 Incremento in più).</p></div>`}
+function vNav(V){return '<div class="row" style="gap:6px;margin:6px 0;overflow-x:auto;flex-wrap:nowrap">'+VSEC.filter(s=>s!='Mostro'||V.mostro).map(s=>`<button class="tab ${s==vsec?'on':''}" style="white-space:nowrap;flex:none" data-act="vl_sec" data-k="${s}">${s}</button>`).join('')+'</div>'}
+function vProf(V){return `<div class="card"><h2>Profilo</h2>${T(VP('desc'),'Descrizione, aspetto, obiettivi')}<label class="pill" style="margin-top:8px"><input type="checkbox" data-p="${VP('mostro')}" data-rcc ${V.mostro?'checked':''}> Mostro (abilita la scheda Qualità Mostruose)</label>${T(VP('note'),'Note del GM')}</div>
+ <div class="card"><h2>Regole in breve</h2><p class="hint">Un Malvagio ha solo due Tratti, Forza e Influenza, la cui somma è la Malvagità (Debole ≈5, Forte ≈10, Epico ≈15, Leggendario ≈20). In un Rischio lancia un numero di dadi a discrezione del GM, pari o inferiore alla Malvagità (l’Influenza investita in Macchinazioni non è utilizzabile), senza dichiarare un Approccio e senza penalità di Improvvisazione. Gli Eroi riducono l’Influenza con Azioni indirette; la Forza si abbatte solo affrontandolo di persona. Vantaggi: 5 + Forza punti. Dove servirebbe un’Abilità o un Tratto (Vantaggi, Stregonerie, Stili, Manovre) si usa metà Forza per eccesso. Ferite: prima di una Drammatica serve un numero di Ferite pari alla Forza; con 4 Drammatiche è Inerme.</p></div>`}
+function vAdv(V){const x=vcalc(V);
+ return `<div class="card"><h2>Vantaggi</h2><p class="hint">Punti spesi: <b>${x.sp}</b> / ${x.bud} (5 + Forza).${x.sp>x.bud?' <span class="crisi">Oltre il limite!</span>':''}</p>`+V.adv.map((a,i)=>{const f=advF(a.n)||{};return `<div class="item"><div class="row">${a.cu?`<div style="flex:1">${I(VP('adv.'+i+'.n'),'Nome del Vantaggio')}</div>`:`<b class="wn" style="flex:1">${esc(a.n)}</b>`}<div style="width:70px"><label>Costo</label><input type="number" data-p="${VP('adv.'+i+'.c')}" data-rcc data-min="0" value="${vn(a.c)}"></div></div><input type="text" data-p="${VP('adv.'+i+'.nota')}" value="${esc(a.nota||'')}" placeholder="Note">${a.cu?T(VP('adv.'+i+'.d'),'Descrizione ed effetti'):''}${f.d?`<details><summary class="mut">Descrizione</summary><p>${nl(f.d)}</p></details>`:''}<button class="x" data-act="vl_deladv" data-i="${i}">Rimuovi</button></div>`}).join('')+`<button class="o" data-act="vl_advm">+ Vantaggio personalizzato</button></div>`
+ +(CAT.adv.length?`<div class="card"><h2>Vantaggi dal catalogo</h2>${fltCard().replace('class="card"','')}<label>Costo</label><select id="advc"><option value="0">Tutti</option>${[1,2,3,4,5].map(n=>`<option ${advC==n?'selected':''} value="${n}">${n} ${n==1?'punto':'punti'}</option>`).join('')}</select>${CAT.adv.filter(a=>advC=='0'||a.c==advC).map(a=>{const i=CAT.adv.indexOf(a),o=hasAdv(V,a.n);return `<div class="mw" data-n="${esc(a.n.toLowerCase())}"${hid(a.n)}><div class="row"><b class="wn" style="flex:1">${esc(a.n)} <span class="chip">${a.c} pt${a.cn?' · '+esc(a.cn):''}</span></b><button class="${o?'o':''}" data-act="vl_adv" data-i="${i}">${o?'+ Ancora':'+ Aggiungi'}</button></div>${a.req?`<div class="hint">${esc(a.req)}</div>`:''}<details><summary class="mut">Descrizione${a.s?' · '+esc(a.s):''}</summary><p>${nl(a.d)}</p></details></div>`}).join('')}</div>`:'<div class="card"><p class="mut">Importa i manuali (sezione Eroi → Background e Vantaggi) per scegliere dal catalogo.</p></div>')}
+function vArc(V){const vv=CAT.arc.find(a=>a.v==V.virt.n&&a.carta==V.virt.carta),hh=CAT.arc.find(a=>a.h==V.hub.n&&a.carta==V.hub.carta);
+ return `<div class="card"><h2>Arcani</h2><p class="hint">Un Malvagio ha una Virtù e una Hubris, come un Eroe.</p>${CAT.arc.length?`<div class="g2"><div><label>Virtù</label><select id="vvirt"><option value=""></option>${CAT.arc.map((a,i)=>`<option value="${i}" ${a.v==V.virt.n&&a.carta==V.virt.carta?'selected':''}>${esc(a.v)} (${esc(a.carta)})</option>`).join('')}</select></div><div><label>Hubris</label><select id="vhub"><option value=""></option>${CAT.arc.map((a,i)=>`<option value="${i}" ${a.h==V.hub.n&&a.carta==V.hub.carta?'selected':''}>${esc(a.h)} (${esc(a.carta)})</option>`).join('')}</select></div></div>`:`<div class="g2">${I(VP('virt.n'),'Virtù')}${I(VP('hub.n'),'Hubris')}</div><p class="mut">Importa i manuali per scegliere dal catalogo.</p>`}
+ ${vv?`<div class="mw"><b class="wn">Virtù: ${esc(vv.v)}</b><p>${nl(vv.vd)}</p></div>`:''}${hh?`<div class="mw"><b class="wn">Hubris: ${esc(hh.h)}</b><p>${nl(hh.hd)}</p></div>`:''}</div>
+ <div class="card"><h2>Arcani personalizzati</h2><div class="item">${I(VP('cv.n'),'Virtù personalizzata')}${T(VP('cv.d'),'Effetto della Virtù')}</div><div class="item">${I(VP('ch.n'),'Hubris personalizzata')}${T(VP('ch.d'),'Effetto della Hubris')}</div></div>`}
+function manX(ml,why){const L=(CAT.lists.manovre&&CAT.lists.manovre.items)||[];
+ const it=MANORD.map(n=>L.find(x=>x.n==n)||{n,d:''}).concat(L.filter(x=>!MANORD.includes(x.n)));
+ return '<h3>Manovre di Duello</h3><div class="hint">'+why+' · Grado di Mischia: <b>'+ml+'</b>. Costo: 1 Incremento per Manovra; mai la stessa Manovra due volte di seguito.</div>'+it.map(x=>`<div class="mw"><b class="wn">${esc(x.n)}</b>${x.d?`<p>${nl(x.d)}</p>`:''}</div>`).join('')+(L.length?'':'<div class="hint">Descrizioni non importate: importa il Manuale Base per leggerle qui.</div>')}
+const vMan=V=>vhasDuel(V)?manX(vcalc(V).gr,'Il Malvagio conosce uno Stile di Duello (Grado = metà Forza)'):'';
+function vPot(V){const L=CAT.lists,ks=Object.keys(L).filter(k=>k!=='manovre');if(ks.length&&!L[vls])vls=ks[0];const x=vcalc(V);
+ return `<div class="card"><h2>Stregonerie, Stili di Duello e altro</h2><p class="hint">Per un Malvagio il Grado di Abilità/Tratto richiesto da questi poteri è metà Forza per eccesso: <b>${x.gr}</b>.</p>`+V.pot.map((p,i)=>`<div class="item"><div class="row">${p.cu?`<div style="flex:1">${I(VP('pot.'+i+'.n'),'Nome del potere')}</div>`:`<b class="wn" style="flex:1">${esc(p.n)}</b>`}${p.cu?'':`<span class="chip">${esc(p.k||'')}${p.g?' · '+esc(p.g):''}</span>`}</div>${p.cu?I(VP('pot.'+i+'.k'),'Stregoneria / categoria')+T(VP('pot.'+i+'.d'),'Descrizione ed effetti'):''}<input type="text" data-p="${VP('pot.'+i+'.nota')}" value="${esc(p.nota||'')}" placeholder="Note">${!p.cu&&p.d?`<details><summary class="mut">Descrizione</summary><p>${nl(p.d)}</p>${subsH(p)}</details>`:''}<button class="x" data-act="vl_delpot" data-i="${i}">Rimuovi</button></div>`).join('')+`<button class="o" data-act="vl_potm">+ Voce personalizzata</button></div>`
+ +(ks.length?`<div class="card"><h2>Dal catalogo</h2>${fltCard().replace('class="card"','')}<select id="vlsc">${ks.map(k=>`<option value="${esc(k)}" ${k==vls?'selected':''}>${esc(L[k].t)}</option>`).join('')}</select>${(()=>{let lg=null;return L[vls].items.map((it,j)=>{const o=V.pot.some(p=>p.n==it.n&&p.k==L[vls].t);const gh=(it.g||'')!==lg?(lg=it.g||'',lg?`<h3>${esc(lg)}</h3>`:''):'';return gh+`<div class="mw" data-n="${esc(it.n.toLowerCase())}"${hid(it.n)}><div class="row"><b class="wn" style="flex:1">${esc(it.n)}</b><button class="${o?'o':''}" data-act="vl_pot" data-j="${j}">${o?'✓ Scelto (tocca per togliere)':'+ Scegli'}</button></div><details><summary class="mut">Descrizione${it.s?' · '+esc(it.s):''}</summary><p>${nl(it.d)}</p>${subsH(it)}</details></div>`}).join('')})()}</div>`:'<div class="card"><p class="mut">Importa i manuali per scegliere dal catalogo.</p></div>')
+ +(vhasDuel(V)?`<div class="card">${vMan(V)}</div>`:'')}
+function vMac(V){const x=vcalc(V);
+ return `<div class="card"><h2>Macchinazioni</h2><p class="hint">Influenza: <b>${x.I}</b> · investita: <b>${x.inv}</b> · disponibile contro gli Eroi: <b>${x.disp}</b>.${x.inv>x.I?' <span class="crisi">Hai investito più Influenza di quella posseduta.</span>':''}</p>
+ <p class="hint">Una Macchinazione è un piano attivo che culmina in una Scena d’Azione; l’Influenza investita non può essere usata contro gli Eroi. Se gli Eroi non la fermano, il Malvagio ottiene il doppio dell’investimento; se la bloccano, l’investimento è perso.</p>`
+ +V.mac.map((m,i)=>{const st=m.st||'a';return `<div class="item"><div class="row"><div style="flex:1">${I(VP('mac.'+i+'.n'),'Macchinazione (es. Assassinare il Re)')}</div><div style="width:80px"><label>Investita</label><input type="number" ${st!='a'?'disabled':''} data-p="${VP('mac.'+i+'.inv')}" data-rcc data-min="0" value="${vn(m.inv)}"></div></div>
+ ${st=='a'?`<div class="row" style="margin-top:6px"><button data-act="vl_macok" data-i="${i}">✔ Riuscita (+${vn(m.inv)} netti)</button><button class="x" data-act="vl_macko" data-i="${i}">✘ Fermata (−${vn(m.inv)})</button><button class="o" data-act="vl_delmac" data-i="${i}">Elimina</button></div>`:`<div class="row" style="margin-top:6px"><span class="chip">${st=='r'?'Riuscita: Influenza +'+vn(m.inv):'Fermata: Influenza −'+vn(m.inv)}</span><button class="o" data-act="vl_macundo" data-i="${i}">Annulla esito</button><button class="o" data-act="vl_delmac" data-i="${i}">Elimina</button></div>`}</div>`}).join('')+`<button class="o" data-act="vl_macadd">+ Nuova Macchinazione</button></div>
+ <div class="card"><h2>Costi di Influenza</h2><div class="rk"><span>Reclutare un altro Malvagio</span><b>2 ogni 5 punti di Forza</b></div><div class="rk"><span>Impiegare una Squadra di Sgherri</span><b>1 ogni 10 Punti di Forza</b></div><div class="rk"><span>Convincere un alleato a tradire un Eroe</span><b>Panache dell’Eroe</b></div><div class="rk"><span>Corrompere un ufficiale</span><b>1</b></div><div class="rk"><span>Scoprire l’identità di un PNG</span><b>1</b></div><div class="rk"><span>Scoprire l’identità di un Eroe rivale</span><b>Acume dell’Eroe</b></div><div class="rk"><span>Trovare un luogo nascosto</span><b>1</b></div><div class="rk"><span>Fuggire da una Scena</span><b>Tratto più alto tra i presenti</b></div></div>`}
+function vMos(V){return `<div class="card"><h2>Qualità Mostruose</h2><p class="hint">I Mostri Malvagi hanno di solito Forza e niente Influenza, e Qualità Mostruose al posto dei Vantaggi (se erano uomini possono avere entrambi). Non c’è limite al numero di Qualità. Scegli un nome dall’elenco e scrivi l’effetto leggendolo dal tuo Manuale Base (pag. 197-198).</p>`+V.qm.map((q,i)=>`<div class="item">${I(VP('qm.'+i+'.n'),'Qualità')}${T(VP('qm.'+i+'.d'),'Effetto (Dadi Bonus, Punti Pericolo, ecc.)')}<button class="x" data-act="vl_delqm" data-i="${i}">Rimuovi</button></div>`).join('')+`<div class="row"><select id="vqmsel"><option value="">+ Aggiungi Qualità…</option>${QMN.map(n=>`<option>${n}</option>`).join('')}<option value="__">Personalizzata</option></select></div><p class="hint">Paura: un Mostro Terrificante ha 1 Grado di Paura più 1 ogni 5 punti di Forza (qui: <b>${1+Math.floor(vcalc(V).F/5)}</b>); gli Eroi perdono 1 dado per Grado di Paura nei Rischi contro di lui.</p></div>`}
+function vRiep(V){const x=vcalc(V),vv=CAT.arc.find(a=>a.v==V.virt.n&&a.carta==V.virt.carta),hh=CAT.arc.find(a=>a.h==V.hub.n&&a.carta==V.hub.carta);
+ return `<div class="card ms"><div class="mn">${esc(V.nome||'Malvagio senza nome')}${V.mostro?' <span class="chip">Mostro</span>':''}</div>${V.desc?`<p>${nl(V.desc)}</p>`:''}
+ <div class="mg"><div class="mb"><span>Forza</span><b>${x.F}</b></div><div class="mb"><span>Influenza</span><b>${x.I}</b></div><div class="mb"><span>Malvagità</span><b>${x.mal}</b></div><div class="mb"><span>Dadi max</span><b>${x.dadi}</b></div><div class="mb"><span>Grado Abilità</span><b>${x.gr}</b></div><div class="mb"><span>Ferite</span><b>${vn(V.w)}/${x.F}</b></div><div class="mb"><span>Drammatiche</span><b>${vn(V.d)}/4</b></div></div>
+ ${V.d>=4?'<div class="crisi">INERME — sconfitto</div>':''}
+ <h3>Arcani</h3>${vv?`<div class="mw"><b class="wn">Virtù: ${esc(vv.v)}</b> (${esc(vv.carta)})<p>${nl(vv.vd)}</p></div>`:''}${hh?`<div class="mw"><b class="wn">Hubris: ${esc(hh.h)}</b> (${esc(hh.carta)})<p>${nl(hh.hd)}</p></div>`:''}${V.cv.n?`<div class="mw"><b class="wn">Virtù: ${esc(V.cv.n)}</b><p>${nl(V.cv.d)}</p></div>`:''}${V.ch.n?`<div class="mw"><b class="wn">Hubris: ${esc(V.ch.n)}</b><p>${nl(V.ch.d)}</p></div>`:''}${!vv&&!hh&&!V.cv.n&&!V.ch.n?`<p>${esc([V.virt.n&&'Virtù: '+V.virt.n,V.hub.n&&'Hubris: '+V.hub.n].filter(Boolean).join(' · '))||'<span class="mut">Nessuno.</span>'}</p>`:''}
+ <h3>Vantaggi (${x.sp}/${x.bud})</h3>${V.adv.map(a=>{const f=advF(a.n)||{};return `<div class="mw"><b class="wn">${esc(a.n||'(senza nome)')}</b>${a.nota?' ('+esc(a.nota)+')':''}${(f.d||a.d)?`<p>${nl(f.d||a.d)}</p>`:''}</div>`}).join('')||'<p class="mut">Nessuno.</p>'}
+ ${V.qm.length?'<h3>Qualità Mostruose</h3>'+V.qm.map(q=>`<div class="mw"><b class="wn">${esc(q.n||'(senza nome)')}</b>${q.d?`<p>${nl(q.d)}</p>`:''}</div>`).join(''):''}
+ ${V.pot.length?'<h3>Stregoneria e Stili</h3>'+V.pot.map(p=>`<div class="mw"><b class="wn">${esc(p.n||'(senza nome)')}</b> <span class="chip">${esc(p.k||'')}${p.g?' · '+esc(p.g):''}</span>${p.nota?' ('+esc(p.nota)+')':''}${p.d?`<p>${nl(p.d)}</p>${subsH(p)}`:''}</div>`).join(''):''}
+ ${vMan(V)}
+ <h3>Macchinazioni</h3>${V.mac.map(m=>`<div class="mw"><b class="wn">${esc(m.n||'(senza nome)')}</b> <span class="chip">${(m.st||'a')=='a'?'in corso · '+vn(m.inv)+' Influenza investita':m.st=='r'?'riuscita':'fermata'}</span></div>`).join('')||'<p class="mut">Nessuna.</p>'}${V.note?'<h3>Note</h3><p>'+nl(V.note)+'</p>':''}</div>`}
+function villains(){S.gm.vill=S.gm.vill||[];
+ if(gv>=S.gm.vill.length)gv=-1;
+ if(gv<0)return `<div class="card"><div class="row"><button data-act="vl_new">+ Nuovo Malvagio</button><span class="mut">${S.gm.vill.length} salvati</span></div><p class="hint">Schede Malvagio con Forza, Influenza, Ferite, Vantaggi, Arcani, Stregonerie, Macchinazioni e Qualità Mostruose. Vengono salvati insieme al GM e inclusi nel backup.</p></div>`+S.gm.vill.map((V,i)=>{const x=vcalc(V);return `<div class="card"><div data-act="vl_open" data-i="${i}" style="cursor:pointer"><div class="big" style="font-size:20px">${esc(V.nome||'Malvagio senza nome')}${V.mostro?' 🐲':''}</div><p>Forza <b>${x.F}</b> · Influenza <b>${x.I}</b> · Malvagità <b>${x.mal}</b> · Ferite <b>${x.sub}/${x.tot}</b>${V.d>=4?' · <span class="crisi">INERME</span>':''}</p></div><div class="row"><button data-act="vl_open" data-i="${i}">Apri</button><button class="o" data-act="vl_dup" data-i="${i}">Duplica</button><button class="x" data-act="vl_del" data-i="${i}">Elimina</button></div></div>`}).join('');
+ const V=S.gm.vill[gv]=vfix(S.gm.vill[gv]);if(vsec=='Mostro'&&!V.mostro)vsec='Profilo';
+ return vHead(V)+vNav(V)+({'Profilo':vProf,'Vantaggi':vAdv,'Arcani':vArc,'Stregoneria e Duello':vPot,'Macchinazioni':vMac,'Mostro':vMos,'Riepilogo':vRiep}[vsec]||vProf)(V)}
+const gmBar=()=>`<div class="row" style="gap:6px;margin-bottom:8px"><button class="tab ${gmt=='gen'?'on':''}" data-act="vl_tab" data-v="gen">Generale</button><button class="tab ${gmt=='v'?'on':''}" data-act="vl_tab" data-v="v">Malvagi</button><button class="tab ${gmt=='sq'?'on':''}" data-act="vl_tab" data-v="sq">Squadre</button></div>`;
+function gm(){return gmBar()+(gmt=='v'?villains():gmt=='sq'?squadre():gmGen())}
+function vchange(t){const V=gv>=0&&S.gm.vill[gv];
+ if(t.id=='vvirt'||t.id=='vhub'){const a=CAT.arc[+t.value],k=t.id=='vvirt'?'virt':'hub';V[k]=a?(k=='virt'?{n:a.v,carta:a.carta}:{n:a.h,carta:a.carta}):{n:'',carta:''};render();return true}
+ if(t.id=='vlsc'){vls=t.value;render();return true}
+ if(t.dataset.sqm!==undefined){if(t.value!==''){const i=+t.dataset.sqm,k=+t.value,A=S.gm.sq[i],B=S.gm.sq[k];A.forza=vn(A.forza)+vn(B.forza);A.max=Math.max(vn(A.max),A.forza);S.gm.sq.splice(k,1)}render();return true}
+ if(t.dataset.sqq!==undefined){const q=S.gm.sq[+t.dataset.sqq];if(t.value)q.qm.push({n:t.value=='__'?'':t.value,d:''});render();return true}
+ if(t.id=='vqmsel'){if(t.value)V.qm.push({n:t.value=='__'?'':t.value,d:''});render();return true}
+ if(t.dataset.rcc!==undefined){const p=t.dataset.p;if(t.type=='checkbox')put(p,t.checked?1:0);else if(t.tagName=='SELECT')put(p,t.value);else put(p,Math.max(+t.dataset.min||0,Math.floor(Number(t.value)||0)));render();return true}
+ return false}
+function vclick(a,t,i,j,d){const V=gv>=0?S.gm.vill[gv]:null;
+ switch(a){
+ case 'vl_tab':gmt=t.dataset.v;break;
+ case 'vl_sqnew':S.gm.sq.push(sqdef());break;
+ case 'vl_sqdel':if(!confirm('Eliminare questa Squadra?'))return;S.gm.sq.splice(i,1);break;
+ case 'vl_sqadj':{const q=S.gm.sq[i];q.forza=Math.max(0,vn(q.forza)+d);q.max=Math.max(vn(q.max),q.forza);break}
+ case 'vl_sqnm':S.gm.pp=Math.max(0,vn(S.gm.pp)-1);S.gm.sq[i].forza=Math.max(1,vn(S.gm.sq[i].max));break;
+ case 'vl_sqfull':S.gm.sq[i].forza=Math.max(1,vn(S.gm.sq[i].max));break;
+ case 'vl_sqsplit':{const q=S.gm.sq[i],F=vn(q.forza);if(F<2)break;const h=Math.floor(F/2),n=Object.assign({},JSON.parse(JSON.stringify(q)),{forza:h,max:h,nome:(q.nome||'Squadra')+' (B)'});q.forza=F-h;q.max=Math.max(1,q.forza);S.gm.sq.splice(i+1,0,n);break}
+ case 'vl_sqcap':{const q=S.gm.sq[i];S.gm.pp=Math.max(0,vn(S.gm.pp)-1);if(/Pirati|Ladri/.test(q.tipo))q.forza=Math.max(0,vn(q.forza)-1);break}
+ case 'vl_sqdelq':S.gm.sq[i].qm.splice(j,1);break;
+ case 'vl_new':S.gm.vill.push(vdef());gv=S.gm.vill.length-1;vsec='Profilo';break;
+ case 'vl_open':gv=i;vsec='Profilo';break;
+ case 'vl_back':gv=-1;break;
+ case 'vl_dup':{const n=JSON.parse(JSON.stringify(S.gm.vill[i]));n.nome=(n.nome||'Senza nome')+' (copia)';S.gm.vill.push(n);break}
+ case 'vl_del':if(!confirm('Eliminare questo Malvagio?'))return;S.gm.vill.splice(i,1);if(gv==i)gv=-1;else if(gv>i)gv--;break;
+ case 'vl_sec':vsec=t.dataset.k;break;
+ case 'vl_adj':{const k=t.dataset.k,mn=+t.dataset.min||0;V[k]=Math.max(mn,vn(V[k])+d);if(k=='forza')V.w=Math.min(vn(V.w),V.forza);break}
+ case 'vl_dmg':vdmg(V,d);break;
+ case 'vl_dmgn':vdmg(V,vn(document.getElementById('vdn').value));break;
+ case 'vl_heal':V.w=Math.max(0,vn(V.w)-d);break;
+ case 'vl_dr':V.d=Math.min(4,Math.max(0,vn(V.d)+d));break;
+ case 'vl_clr':V.w=0;V.d=0;break;
+ case 'vl_adv':{const y=CAT.adv[i];V.adv.push({n:y.n,c:y.c,nota:''});break}
+ case 'vl_advm':V.adv.push({n:'',c:1,nota:'',d:'',cu:1});break;
+ case 'vl_deladv':V.adv.splice(i,1);break;
+ case 'vl_pot':{const L=CAT.lists[vls],it=L.items[j],k=V.pot.findIndex(p=>p.n==it.n&&p.k==L.t);if(k>=0)V.pot.splice(k,1);else V.pot.push({n:it.n,k:L.t,g:it.g||'',d:it.d,subs:it.subs||[],nota:''});break}
+ case 'vl_potm':V.pot.push({n:'',k:'',d:'',nota:'',cu:1});break;
+ case 'vl_delpot':V.pot.splice(i,1);break;
+ case 'vl_delqm':V.qm.splice(i,1);break;
+ case 'vl_macadd':V.mac.push({n:'',inv:1,st:'a'});break;
+ case 'vl_macok':{const m=V.mac[i];if((m.st||'a')!='a')break;V.infl=vn(V.infl)+vn(m.inv);m.st='r';break}
+ case 'vl_macko':{const m=V.mac[i];if((m.st||'a')!='a')break;V.infl=Math.max(0,vn(V.infl)-vn(m.inv));m.st='f';break}
+ case 'vl_macundo':{const m=V.mac[i];if(m.st=='r')V.infl=Math.max(0,vn(V.infl)-vn(m.inv));else if(m.st=='f')V.infl=vn(V.infl)+vn(m.inv);m.st='a';break}
+ case 'vl_delmac':V.mac.splice(i,1);break;
+ }}
+
+// ---------- Squadre di Sgherri (GM) ----------
+const SQT={'':'Nessuno (Squadra comune)','Guardie':'Guardie — 1 Punto Pericolo: dirigono contro di sé un attacco rivolto a un Malvagio, riducendo le Ferite inflitte di 1.','Assassini':'Assassini — 1 Punto Pericolo: agiscono subito prima dell’Eroe più veloce, infliggendo subito le loro Ferite.','Duellanti':'Duellanti — 1 Punto Pericolo: attaccano una seconda volta contro lo stesso Eroe o un altro.','Pirati':'Pirati — 1 Punto Pericolo: rapiscono un non-Eroe dalla Scena; la Forza scende di 1.','Ladri':'Ladri — 1 Punto Pericolo: rubano un oggetto dell’Eroe; la Forza scende di 1.'};
+const sqdef=()=>({nome:'',forza:5,max:5,tipo:'',mostro:0,qm:[],note:''});
+const SP=(i,k)=>'gm.sq.'+i+'.'+k;
+function squadre(){S.gm.sq=S.gm.sq||[];
+ return `<div class="card"><div class="row"><button data-act="vl_sqnew">+ Nuova Squadra</button><span class="mut">${S.gm.sq.length} salvate</span></div><p class="hint">Una Squadra ha un solo Tratto, la Forza (numero di persone). Ogni Incremento degli Eroi la riduce di 1; nel suo turno infligge Ferite pari alla Forza attuale a un solo Eroe. Se non è a zero può continuare l’assalto, riorganizzarsi (unirsi o dividersi) o arrendersi. Impiegarne una costa 1 Influenza ogni 10 punti di Forza.</p></div>`
+ +S.gm.sq.map((q,i)=>{q=S.gm.sq[i]=Object.assign(sqdef(),q);const F=vn(q.forza),M=Math.max(vn(q.max),F),others=S.gm.sq.map((o,k)=>[o,k]).filter(([o,k])=>k!=i&&vn(o.forza)>0);
+  return `<div class="card"><div class="row"><div style="flex:1">${I(SP(i,'nome'),'Nome della Squadra')}</div><button class="x" data-act="vl_sqdel" data-i="${i}">Elimina</button></div>
+  <div class="mg" style="margin-top:8px"><div class="mb"><span>Forza attuale</span><div class="cur"><button class="o" data-act="vl_sqadj" data-i="${i}" data-d="-1">−</button><input type="number" style="width:56px;text-align:center" data-p="${SP(i,'forza')}" data-rcc data-min="0" value="${F}"><button class="o" data-act="vl_sqadj" data-i="${i}" data-d="1">+</button></div><i>Ferite inflitte per attacco: ${F}</i></div><div class="mb"><span>Forza iniziale</span><input type="number" style="width:70px;text-align:center" data-p="${SP(i,'max')}" data-rcc data-min="1" value="${M}"></div></div>
+  ${F==0?'<div class="crisi">SCONFITTA</div>':''}
+  <div class="row" style="margin-top:6px"><button class="o" data-act="vl_sqfull" data-i="${i}">Ripristina Forza</button><button class="o" data-act="vl_sqsplit" data-i="${i}">Dividi a metà</button>${others.length?`<select data-sqm="${i}"><option value="">Unisci con…</option>${others.map(([o,k])=>`<option value="${k}">${esc(o.nome||'Squadra '+(k+1))} (Forza ${vn(o.forza)})</option>`).join('')}</select>`:''}</div>
+  <label style="margin-top:8px">Tipo</label><select data-p="${SP(i,'tipo')}" data-rcc>${Object.keys(SQT).map(k=>`<option value="${k}" ${k==q.tipo?'selected':''}>${k||'Nessuno'}</option>`).join('')}</select>
+  ${q.tipo?`<div class="hint">${esc(SQT[q.tipo])}</div><div class="row"><button class="o" data-act="vl_sqcap" data-i="${i}">Usa Capacità (−1 Punto Pericolo${/Pirati|Ladri/.test(q.tipo)?', −1 Forza':''})</button><span class="mut">Punti Pericolo GM: <b>${S.gm.pp}</b></span></div>`:''}
+  <label class="pill" style="margin-top:8px"><input type="checkbox" data-p="${SP(i,'mostro')}" data-rcc ${q.mostro?'checked':''}> Squadra di Mostri (Qualità Mostruose al posto del Tipo)</label>
+  ${q.mostro?`${q.qm.map((m,k)=>`<div class="item">${I(SP(i,'qm.'+k+'.n'),'Qualità')}${T(SP(i,'qm.'+k+'.d'),'Effetto')}<div class="row">${/Non Morto/i.test(m.n)?`<button class="o" data-act="vl_sqnm" data-i="${i}">Ripristina piena Forza (−1 PP, fine Round)</button>`:''}<button class="x" data-act="vl_sqdelq" data-i="${i}" data-j="${k}">Rimuovi</button></div></div>`).join('')}<select data-sqq="${i}"><option value="">+ Aggiungi Qualità…</option>${QMN.map(n=>`<option>${n}</option>`).join('')}<option value="__">Personalizzata</option></select><div class="hint">Di solito una o due Qualità per Squadra. Scrivi l’effetto dal tuo Manuale Base (pag. 197-198).</div>`:''}
+  ${T(SP(i,'note'),'Note')}</div>`}).join('')}
+function gmGen(){const g=S.gm;return `<div class="card"><h2>Riserva di Pericolo</h2><div class="cur" style="justify-content:center"><button class="o" data-act="adj" data-p="gm.pp" data-d="-1">−</button><input type="number" data-p="gm.pp" value="${g.pp}" style="width:90px;font-size:22px"><button class="o" data-act="adj" data-p="gm.pp" data-d="1">+</button></div><p class="hint">All'inizio di ogni sessione il GM ha 1 Punto Pericolo per ogni Eroe (${S.chars.length} salvati).</p><div class="row" style="justify-content:center"><button class="o" data-act="ppreset">Imposta = numero di Eroi</button></div></div>
  <div class="card"><h2>Storie del GM</h2>${g.storie.map((s,i)=>`<div class="item">${I(`gm.storie.${i}.t`,'Titolo')}${T(`gm.storie.${i}.c`,'Conclusione e ricompensa')}<label style="margin-top:6px">Atti</label>${s.atti.map((a,j)=>`<div class="row" style="margin-top:4px"><label class="pill"><input type="checkbox" data-p="gm.storie.${i}.atti.${j}.d" ${a.d?'checked':''}> ${j+1}</label><input type="text" style="flex:1" data-p="gm.storie.${i}.atti.${j}.t" value="${esc(a.t)}"><button class="x" data-act="gdelatto" data-i="${i}" data-j="${j}">✕</button></div>`).join('')}<div class="row" style="margin-top:6px"><button class="o" data-act="gaddatto" data-i="${i}">+ Atto</button><button class="x" data-act="gdelst" data-i="${i}">Rimuovi</button></div></div>`).join('')}<button class="o" data-act="gaddst">+ Nuova Storia del GM</button></div>
  <div class="card"><h2>Note del GM</h2>${T('gm.note','Malvagi, Squadre di Sgherri, segreti…')}</div>`}
 function doImport(rep){const el=document.getElementById('bk');try{const j=JSON.parse(el.value.trim());if(!j||!Array.isArray(j.chars))throw 0;
@@ -586,6 +708,7 @@ document.addEventListener('input',e=>{const t=e.target,p=t.dataset.p;
  if(p=='c.ph'){document.querySelectorAll('input[data-p="c.ph"]').forEach(x=>{if(x!==t)x.value=t.value})}
  if(t.dataset.rc!==undefined){render();return}save()});
 document.addEventListener('change',e=>{const t=e.target;
+ if(vchange(t))return;
  if(t.id=='bgn'){bgSel=t.value;render();return}if(t.id=='advc'){advC=t.value;render();return}if(t.id=='lsc'){lsSel=t.value;render();return}
  if(t.id=='virt'||t.id=='hub'){const a=CAT.arc[+t.value],k=t.id;if(a){S.c[k]=k=='virt'?{n:a.v,carta:a.carta}:{n:a.h,carta:a.carta}}else S.c[k]={n:'',carta:''};render();return}
  if(t.id=='pdf'&&t.files.length)importPdf([...t.files])});
@@ -629,6 +752,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(
  else if(a=='gdelst')S.gm.storie.splice(i,1);
  else if(a=='gaddatto')S.gm.storie[i].atti.push({t:'',d:0});
  else if(a=='gdelatto')S.gm.storie[i].atti.splice(j,1);
+ else if(a.startsWith('vl_'))vclick(a,t,i,j,d);
  else if(a=='clrcat'){if(confirm('Cancellare il catalogo importato?')){CAT={v:0,bg:[],adv:[],arc:[],nat:{},lists:{}};localStorage.removeItem(CK)}else return}
  else if(a=='reset'){if(confirm('Azzerare questa scheda?')){S.chars[S.cur]=def().c;S.c=S.chars[S.cur]}else return}
  render()});
