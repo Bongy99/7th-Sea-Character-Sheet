@@ -98,11 +98,15 @@ function post7(k,items){const cl=x=>String(x).replace(/\s+/g," ").replace(/([a-z
   if(r){g=r[1]||'';drop=!r[1]||r[2]}
   const ri=i.r;delete i.r;if(drop)continue;
   if(ri&&!/cavalieri/.test(k)&&!(r&&r[1]))i.g=ri;else if(g)i.g=g;
+  if(i.pg&&/^Incanti di /.test(i.pg))i.g=i.pg;if(i.tag)i.n=i.n+' ('+i.tag[0].toUpperCase()+i.tag.slice(1)+')';delete i.pg;delete i.tag;
   if(i.g==='Regole')continue;
   i.d=cl(i.d);
   const sp=(re)=>{const parts=i.d.split(re);if(parts.length<3)return false;i.d=cl(parts[0]);i.subs=[];
    for(let x=1;x<parts.length;x+=2){const body=parts[x+1]||'';const bl=body.split(/\s*•\s*/).map(cl).filter(Boolean);
     i.subs.push({n:parts[x],d:/•/.test(body)?bl.join('\n'):cl(body)})}return true};
+  if(/cavalieri/.test(k)&&/^Hildræd/.test(i.n)&&/Hereward/.test(i.d)){
+   const mk2=(n,a,b)=>({n,g:i.g,d:i.d,subs:[{n:'Tratto Maggiore',d:a},{n:'Tratto Minore',d:b}]});
+   res.push(mk2('Hereward il Consigliere','Acume','Panache'));res.push(mk2('Hildræd la Comandante','Grazia','Vigore'));continue}
   if(/galdr/.test(k))sp(/\b(Stort Merke|Litet Merke):?\s*/);
   else if(/sanderis|melbur/.test(k)){if(!sp(/\b(Favori Maggiori|Favori Minori):\s*/))continue}
   else if(/sorte/.test(k))sp(/\b(Maggiore|Minore):\s*/);
@@ -123,13 +127,14 @@ function mkParser7(){
  const isUp=s=>/[A-ZÀ-Ú]/.test(s)&&s===s.toUpperCase();
  let mode='',bgNat='',cost=0,cur=null,blk=null,sec=null,ent=null,pend=null,hy=false,lastH2='',lastH1='',lastCol=-1,natT=null,arcMode=null,arcC=null,stil=null;
  const addT=(o,k,l)=>{const t=l.txt;if(!t)return;const p=o[k]||'';o[k]=(o['_h'+k]?p:(p?p+' ':''))+t;o['_h'+k]=!!l.hy};
- let grpN='',pendStyle=null,lastH2Nat=false;
+ let PT=[],secG='',grpN='',pendStyle=null,lastH2Nat=false;
  function finNat(){if(!natT)return;const it=natT.it,pl=it.filter(x=>/^\+/.test(x.s)),mx=pl.length?Math.min(...pl.map(x=>x.x)):1e9;
   const bon=it.filter(x=>/^\+/.test(x.s)||x.x>=mx-8).sort((a,b)=>b.y-a.y),nm=it.filter(x=>!/^\+/.test(x.s)&&x.x<mx-8);
   const rr=[];bon.forEach(b=>{if(/^\+/.test(b.s)||!rr.length)rr.push({y:b.y,b:b.s});else rr[rr.length-1].b+=' '+b.s});
   nm.forEach(n=>{let best=null,bd=1e9;rr.forEach(r=>{const d=Math.abs(r.y-n.y);if(d<bd){bd=d;best=r}});if(best)(best.n=best.n||[]).push(n)});
   rr.forEach(r=>{const z=cl((r.n||[]).sort((a,b)=>b.y-a.y).map(x=>x.s).join(' '));if(z)out.nat[z]=cl(r.b)});natT=null}
  function build(items){
+  PT=items.filter(t=>t.str!==undefined&&/^(MINORE|MAGGIORE)$/.test(t.str.trim()));
   const its=items.filter(t=>t.str!==undefined&&t.str.trim()&&t.y>34&&t.h>=8&&!/Riccardo Milone|^ç$/.test(t.str.trim()));
   const L=[];
   const cols=[its.filter(t=>t.x<305),its.filter(t=>t.x>=305)];
@@ -155,7 +160,9 @@ function mkParser7(){
   grp(blk.items.filter(t=>t.x>=blk.cx)).forEach(l=>{const p=A[A.length-1];if(p&&!SKN.has(p.s.toLowerCase())&&SKN.has(cl(p.s+' '+l.s).toLowerCase()))p.s=cl(p.s+' '+l.s);else A.push({s:l.s})});
   cur.vant=V.map(x=>x.s).filter(s=>s&&!/^(Vantaggi|Abilità)$/i.test(s));cur.abil=A.map(x=>x.s).filter(s=>s&&!/^(Vantaggi|Abilità)$/i.test(s));blk=null}
  function finAdv(){if(ent&&mode!=='sec'&&mode!=='stil'){ent.d=cl(ent.d);delete ent._hd;if(ent.d)out.adv.push(ent)}if(mode==='adv'||mode==='adv0')ent=null}
- function finSec(){if(ent&&sec){ent.d=cl(ent.d);delete ent._hd;if(ent.d)sec.items.push(ent)}if(mode==='sec')ent=null}
+ const TRT=/^(Vigore|Grazia|Risolutezza|Acume|Panache)$/;
+ function mkEnt(t,l){const x0=l.i[0].x;const tg=PT.find(p=>Math.abs(p.y-l.y)<=5&&p.x>x0&&p.x-x0<260&&(p.x<305)==(x0<305));return{n:t,r:grpN||'',d:'',pg:secG,tag:tg?cl(tg.str).toLowerCase():''}}
+ function finSec(){if(ent&&sec){ent.d=cl(ent.d);delete ent._hd;if(ent.tv){ent.subs=['Maggiore','Minore'].filter(k=>ent.tv[k]).map(k=>({n:'Tratto '+k,d:ent.tv[k]}))}delete ent.tv;delete ent.tl;if(ent.d)sec.items.push(ent)}if(mode==='sec')ent=null}
  function sectionFor(t){t=String(t).replace(/^\((.*)\)$/,'$1');const k='sorc:'+t.toLowerCase().replace(/[^a-zà-ú0-9]+/g,'_');if(!out.lists[k])out.lists[k]={t:t,items:[]};return out.lists[k]}
  function finStil(){if(stil){stil.d=cl(stil.d);if(stil.d||stil.r){const k='stili';if(!out.lists[k])out.lists[k]={t:'Stili di Duello',items:[]};out.lists[k].items.push({n:stil.n,r:stil.r,d:stil.d})}}stil=null}
  function body(l){ // testo di corpo
@@ -180,8 +187,8 @@ function mkParser7(){
      if(mode=='bg'&&cur===null&&/^(delle|della|dello|dei|degli|di|dell’)\s/i.test(t)&&/^Background/i.test(lastH2)){bgNat=cl(bgNat+' '+t);continue}
      if(mode=='bg'&&l.b&&!/^(Vantaggi|Passo|Due )/i.test(t)){bgNat=/^(delle|della|dello|dei|degli|di|dell’)\s/i.test(t)&&lastH2Nat?cl(bgNat+' '+t):t.replace(/^Alleanza\s+/i,'');lastH2Nat=true;cur=null;continue}
      if(pgArc&&!/^Passo/i.test(t)){arcC={carta:t,v:'',vd:'',h:'',hd:''};out.arc.push(arcC);arcMode='c';continue}
-     if(sec){if(ent&&!ent.d){grpN=ent.n;}finSec();ent={n:t,r:grpN||'',d:''};continue}
-     if(/^Come Funziona/i.test(t)){mode='sec';sec=sectionFor(lastH1||'Stregoneria');ent=null;grpN='';continue}
+     if(sec){if(ent&&!ent.d){grpN=ent.n;}finSec();ent=mkEnt(t,l);continue}
+     if(/^Come Funziona/i.test(t)){mode='sec';sec=sectionFor(lastH1||'Stregoneria');ent=null;grpN='';secG='';continue}
      pendStyle={n:t};lastH2=t;continue}
     if(/^NAZIONE\b/.test(t)&&/Aller/i.test(l.f)){finNat();natT={xb:(l.i.find(x=>/BONUS/.test(x.str))||l.i[l.i.length-1]).x,it:[]};continue}
     if(natT){if(!body&&l.h<=10.2){natT.it.push(...l.i.map(x=>({s:x.str.trim(),x:x.x,y:x.y})));continue}finNat()}
@@ -190,11 +197,16 @@ function mkParser7(){
      if(m=t.match(/^Hubris\s*:\s*(.*)$/)){arcC.h=cl(m[1]);arcMode='h';continue}
      if(arcMode=='v'){addT(arcC,'vd',l)}else if(arcMode=='h'){addT(arcC,'hd',l)}
      continue}
-    if(h3&&/^Come Funziona/i.test(t)){mode='sec';finSec();sec=sectionFor(lastH1||'Stregoneria');ent=null;grpN='';continue}
+    if(h3&&/^Come Funziona/i.test(t)){mode='sec';finSec();sec=sectionFor(lastH1||'Stregoneria');ent=null;grpN='';secG='';continue}
     if(h3&&/^Bonus di Stile/i.test(t)&&pendStyle){finSec();stil={n:pendStyle.n,r:cl(t.replace(/^Bonus di Stile\s*:\s*/i,'')),d:''};pendStyle=null;mode='stil';continue}
     if(mode=='stil'&&stil){if(h3&&!body){addT(stil,'d',{txt:t,hy:false});continue}if(body||!h3){addT(stil,'d',l)}continue}
     if(mode=='sec'&&sec){
-     if(h3){if(ent&&!ent.d){grpN=ent.n}finSec();ent={n:t,r:grpN||'',d:''};continue}
+     if(/^Incanti di /.test(t)&&l.h>=11.5&&l.h<=12.6){finSec();ent=null;secG=t;continue}
+     if(ent){const labs=l.i.filter(x=>/^Tratto (Maggiore|Minore)/.test(x.str.trim()));
+      if(labs.length){ent.tl=labs.map(x=>({k:/Maggiore/.test(x.str)?'Maggiore':'Minore',x:x.x}));
+       labs.forEach(x=>{const m=x.str.match(/:\s*(\S.*)$/);if(m&&TRT.test(m[1].trim()))(ent.tv=ent.tv||{})[/Maggiore/.test(x.str)?'Maggiore':'Minore']=m[1].trim()});continue}
+      if(ent.tl&&!body&&l.i.every(x=>TRT.test(x.str.trim()))){for(const x of l.i){let best=null;for(const lb of ent.tl)if(x.x>=lb.x-3&&(!best||lb.x>best.x))best=lb;if(best)(ent.tv=ent.tv||{})[best.k]=x.str.trim()}continue}}
+     if(h3){if(ent&&!ent.d){grpN=ent.n}finSec();ent=mkEnt(t,l);continue}
      if(ent&&body)addT(ent,'d',l);continue}
     if(mode=='bg'||mode=='bg0'){
      if(isName(l)&&!/^\(/.test(t)){finBlk();cur={n:cap(t),naz:bgNat,d:'',pec:'',res:'',vant:[],abil:[]};out.bg.push(cur);pend='d';continue}
