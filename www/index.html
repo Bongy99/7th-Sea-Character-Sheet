@@ -245,6 +245,212 @@ function mkParser7(){
  }}
 if(typeof module!='undefined')module.exports=mkParser7;
 
+// Parser per "Navigavia: Manuale Base" (7th Sea 2e, InnTale / Need Games)
+// Stessa interfaccia di mkParser7: page(items), result() -> {bg,adv,arc,nat,lists}
+function mkParserN(){
+ const out={bg:[],adv:[],arc:[],nat:{},lists:{}};
+ const sf=f=>String(f||'').replace(/^\w+\+/,'');
+ const cl=x=>String(x||'').replace(/\s+/g,' ').trim();
+ const SMALL=/^(de|dal|dalla|dai|dagli|dalle|dallo|di|del|dello|della|dei|degli|delle|da|in|con|e|a|al|ai|alla|la|il|lo|le|gli|un|una|per|se|su|nel|nella)$/i;
+ const cap=s=>cl(s).toLowerCase().split(' ').map((w,i)=>{if(i&&SMALL.test(w))return w;
+  w=w.replace(/^((?:l|d|dell|all|nell|sull|sant|un|quest|c)’)([a-zà-ú])/,(m,a,b)=>a+b.toUpperCase());
+  if(i&&/^(dell|dall|all|nell|sull)’/.test(w))return w;
+  return w.replace(/(^|[\-(])([a-zà-ú])/g,(m,a,b)=>a+b.toUpperCase())}).join(' ');
+ const lex=new Set(['contratto','lua','pele','salt']);                      // lessico dal testo del manuale (per ricostruire gli spazi dei nomi)
+ const addLex=t=>{(String(t).toLowerCase().match(/[a-zà-ú]+/g)||[]).forEach(w=>lex.add(w))};
+ const pend=[];                            // nomi da rifinire a fine lettura
+ // nome grezzo: pezzi (chunk) separati da interruzioni sicure di parola
+ function rawName(l){const ch=[];let cur='',pv=null,brk=false;
+  for(const i of l.i){let t=i.str;if(!t.trim()){if(i.w>=0.045*i.h)brk=true;continue}
+   {const tt=t.trim();const tk=tt.split(/\s+/);if(tk.length>=2&&tk.every(x=>x.length===1||(x.length===2&&/[’']/.test(x))))t=tk.join('')}
+   if(pv&&(brk||i.x-(pv.x+pv.w)>0.45*i.h)&&cur){ch.push(cur);cur=""}
+   brk=false;cur+=t.replace(/\s+/g,' ');pv=i}
+  if(cur)ch.push(cur);return ch}
+ const STOP=new Set(['lua','de','a','e','i','o','il','lo','la','le','li','un','di','da','in','su','ai','al','ma','se','ti','mi','ci','ne','no','si','me','te','col','con','per','del','dei','gli','una','non','poi','che','tra','fra','nei','sul','alla','dal','nel','tuo','suo','mio']);
+ const okw=(w)=>lex.has(w)&&(w.length>=4||STOP.has(w));
+ function dpSeg(w,B){ // w: stringa minuscola senza spazi; B: insieme dei confini "morbidi" (indici)
+  const n=w.length;if(n<=3||lex.has(w))return[w];
+  const best=Array(n+1).fill(null);best[0]={c:0,p:-1};
+  for(let e=1;e<=n;e++)for(let s2=Math.max(0,e-24);s2<e;s2++){if(!best[s2])continue;const sub=w.slice(s2,e);
+   let c;if(okw(sub))c=1+(sub.length<3?0.5:0)-sub.length*0.01;else if(B.has(s2)&&B.has(e)||s2===0&&e===n)c=3+sub.length*0.35;else continue;
+   if(s2>0&&!B.has(s2))c+=1;
+   B.forEach(b=>{if(b>s2&&b<e)c+=4});
+   c+=best[s2].c;if(!best[e]||c<best[e].c)best[e]={c:c,p:s2}}
+  if(!best[n])return[w];const res=[];for(let e=n;e>0;e=best[e].p)res.unshift(w.slice(best[e].p,e));return res}
+ function fixName(chunks){
+  const words=[];
+  chunks.forEach(c=>{c.split(/([^A-Za-zÀ-ÿ’']+)/).forEach(tok=>{if(!tok)return;
+   if(/^[A-Za-zÀ-ÿ’']+$/.test(tok)){const w=tok.toLowerCase().replace(/'/g,'’');let start=0;const cuts=[];
+     for(let i=0;i<w.length;i++)if(w[i]==='’'&&i<w.length-1)cuts.push(i+1);cuts.push(w.length);
+     cuts.forEach(e=>{const part=w.slice(start,e);const core=part.replace(/’$/,'');const segs=dpSeg(core,new Set([0,core.length]));
+      if(part.endsWith('’'))segs[segs.length-1]+='’';segs.forEach(x=>words.push({w:x}));start=e})}
+   else{const p=tok.trim();if(p)words.push({p:p})}})});
+  let s='';words.forEach((x,i)=>{if(x.p!==undefined){if(/^[-–]$/.test(x.p))s+=x.p;else if(/^[(]/.test(x.p))s+=(s?' ':'')+x.p;else s+=x.p}
+   else{const prev=words[i-1];if(s&&!(prev&&prev.p!==undefined&&/^[-–(]$/.test(prev.p))&&!/’$/.test(s))s+=' ';s+=x.w}});
+  return cl(s).replace(/\blu a-pele\b/i,'lua-pele')}
+ const lateName=(obj,key,chunks,fn)=>{pend.push({o:obj,k:key,ch:chunks,fn:fn||(x=>cap(x))});obj[key]='';};
+ // ---- util testo
+ const addT=(o,k,t)=>{t=cl(t);if(!t)return;const cur=o[k]||'';
+  if(/[A-Za-zà-ú]-$/.test(cur)&&/^[a-zà-ú]/.test(t))o[k]=cur.slice(0,-1)+t;else o[k]=cur?cur+' '+t:t};
+ function jn(l){let s='',pv=null,brk=false;for(const i of l.i){let t=i.str;if(!t.trim()){if(i.w>=0.35)brk=true;continue}
+  if(pv&&(brk||i.x-(pv.x+pv.w)>(/AJenson|Navigavia-Reg|Calluna/.test(sf(i.f))?0.13:0.22)*i.h)&&!/^\s/.test(t)&&!/\s$/.test(s)&&s)s+=' ';brk=false;s+=t;pv=i}return cl(s)}
+ function build(items){
+  const its=items.filter(t=>t.str!==undefined&&t.str.trim()&&t.y>34&&!/Bongiorno|Riccardo Milone/.test(t.str));
+  // elimina doppioni (titoli stampati due volte con ombra)
+  const seen=[];const u=[];for(const t of its){if(/DominicanSmallCaps/.test(t.f)&&seen.some(s=>s.str===t.str&&Math.abs(s.y-t.y)<1&&Math.abs(s.x-t.x)<8))continue;seen.push(t);u.push(t)}
+  const L=[];
+  [u.filter(t=>t.x<305),u.filter(t=>t.x>=305)].forEach((c,ci)=>{c.sort((a,b)=>b.y-a.y||a.x-b.x);const ls=[];
+   for(const t of c){const l=ls[ls.length-1];if(l&&Math.abs(l.y-t.y)<=2.6)l.i.push(t);else ls.push({y:t.y,i:[t],col:ci})}
+   for(const l of ls){l.i.sort((a,b)=>a.x-b.x);const m=l.i.filter(i=>i.str.trim());if(!m.length)continue;
+    l.f=sf(m[0].f);l.h=m[0].h;l.x=m[0].x;l.col=ci;l.t=jn(l);L.push(l)}});
+  return L}
+ const isName=l=>/Dominican-SC700/.test(l.f)&&l.h<9;
+ const isH15=l=>/Dominican-SC700/.test(l.f)&&l.h>=14;
+ const isH12=l=>/^Dominican$/.test(l.f)&&l.h>=11.5&&l.h<=12.6;
+ const isH13=l=>/^Dominican$/.test(l.f)&&l.h>12.6&&l.h<14;
+ const isSC=l=>/DominicanSmallCaps/.test(l.f)&&l.h>=10.5;
+ const isBody=l=>/AJensonPro|Navigavia-Regular/.test(l.f)&&l.h>=10&&l.h<=11;
+ const isCal=l=>/CallunaSans-Light/.test(l.f);
+ const isCalB=l=>/CallunaSans-Bold/.test(l.f);
+ // ---- stato
+ let sect='',nation='',ent=null,mode='',cost=0,blk=null,sorc=null,grp='',sideSkip=false,stil=null,arcC=null,arcM='',natRows=[];
+ const stiliOut=[];
+ function endStil(){if(stil){stil.d=cl(stil.d);delete stil._h;delete stil._b;stiliOut.push(stil);stil=null}}
+ function endEnt(){if(sorc&&ent&&ent.d){ent.d=cl(ent.d);if(ent.subs)ent.subs=ent.subs;sorc.items.push(ent)}ent=null}
+ function endBlk(){if(!blk||!blk.bg)return;const v=[],a=[];
+  for(const it of blk.items){const c=it.x+it.w/2;const dv=Math.abs(c-blk.vc),da=Math.abs(c-blk.ac);(dv<=da?v:a).push(it)}
+  const mk=arr=>{const lines=[];arr.sort((p,q)=>q.y-p.y||p.x-q.x).forEach(i=>{const l=lines[lines.length-1];if(l&&Math.abs(l.y-i.y)<2.6)l.t+=i.str;else lines.push({y:i.y,t:i.str})});
+   const s=cl(lines.map(l=>l.t).join(' '));return s.split(/,\s*(?![^()]*\))/).map(cl).filter(Boolean)};
+  blk.bg.vant=mk(v);blk.bg.abil=mk(a);blk=null}
+ function sorcFor(t){const k='sorc:'+t.toLowerCase().replace(/[^a-zà-ú0-9]+/g,'_');if(!out.lists[k])out.lists[k]={t:t,items:[]};return out.lists[k]}
+ function titleOf(t){t=cl(t).replace(/^PASSO \d:\s*/i,'');return cap(t)}
+ return{
+  want(n,tot){return n>=148&&n<=194||n>=254},
+  page(items){
+   const L=build(items);
+   // lessico: tutto il testo normale
+   for(const l of L){if(!isName(l)&&!isH15(l)&&!isSC(l))addLex(l.t)}
+   for(let k=0;k<L.length;k++){const l=L[k];const t=l.t;
+    // --- titoli di sezione
+    if(isSC(l)&&/^PASSO \d/i.test(t)){endBlk();endEnt();
+     const n=+t.match(/^PASSO (\d)/i)[1];sect=n==2?'nat':n==3?'bg':n==5?'adv':n==6?'arc':'';ent=null;mode='';sorc=null;continue}
+    if(isSC(l)&&sect==='sorc'||isSC(l)&&sect==='stili'){ // titolo di stregoneria (può andare su 2 righe)
+     endBlk();endEnt();let title=t;
+     while(L[k+1]&&isSC(L[k+1])&&Math.abs(L[k+1].y-l.y)<30&&L[k+1].col===l.col){k++;title+=' '+L[k].t}
+     if(sect==='stili'&&/STILI DI DUELLO/i.test(title)){sorc=null;ent=null;mode='stil';continue}
+     if(sect==='stili'){endStil();continue}
+     title=titleOf(title.replace(/^M+Ō+/,'MŌ').replace(/\s+/g,' '));
+     sorc=sorcFor(title);grp='';mode='sorc';ent=null;sideSkip=false;continue}
+    if(isSC(l)&&sect==='bg'){endBlk();ent=null;let tt=t;
+     while(L[k+1]&&isSC(L[k+1])&&Math.abs(L[k+1].y-l.y)<22&&L[k+1].col===l.col){k++;tt+=' '+L[k].t}
+     nation=/^BACKGROUND BASE/i.test(tt)?'':cap(tt);mode='';continue}
+    if(isSC(l)){ // altro titolo (società segrete ecc.)
+     endBlk();endEnt();if(!/PASSO|ARCANI/.test(t)){if(sect==='bg'||sect==='adv'||sect==='arc'){}}continue}
+    // titolo grande "Stregonerie" / "All'Arrembaggio"
+    if(/TheNautigal/.test(l.f)){const tt=t.replace(/\s+/g,'');
+     if(/^Stregoneri|^S$|^tr$|^egoner|^ie$/i.test(tt)){sect='sorc';endBlk();endEnt();sorc=null}
+     else if(/rremb|^A$|aggio|ll’A/i.test(tt)){sect='stili';endBlk();endEnt();sorc=null;mode=''}
+     else if(/Soci|età|Seg|rete/i.test(tt)){sect='';endBlk();endEnt()}
+     continue}
+    if(!sect)continue;
+    // ----------------------------------------------------- NAZIONI
+    if(sect==='nat'){
+     const m=l.i.filter(i=>i.str.trim());const bn=m.find(i=>/^\+1 /.test(i.str.trim()));
+     if(bn&&m.length>=2){const nm=cl(m.filter(i=>i!==bn).map(i=>i.str).join(' '));out.nat[nm]=cl(bn.str);}
+     continue}
+    // ----------------------------------------------------- BACKGROUND
+    if(sect==='bg'){
+     if(isName(l)){endBlk();const b={n:'',naz:nation,d:'',pec:'',res:'',vant:[],abil:[]};out.bg.push(b);
+      {const raw=rawName(l);const nm=[],pr=[];let inP=false;raw.forEach(c=>{if(inP||/^\(/.test(c)){inP=true;pr.push(c)}else{const p=c.indexOf('(');if(p>0){nm.push(c.slice(0,p));inP=true;pr.push(c.slice(p))}else nm.push(c)}});
+       lateName(b,'n',nm);if(pr.length)lateName(b,'res',pr,x=>cap(x.replace(/^\(|\)$/g,'')))}
+      ent=b;mode='d';continue}
+     if(!ent)continue;
+     if(isCalB(l)&&/^Peculiarit/i.test(t)){endBlk();mode='pec';addT(ent,'pec',t.replace(/^Peculiarit[àa]\s*:\s*/i,''));continue}
+     if(isCalB(l)&&/^Vantaggi\s+Abilit/i.test(t)){endBlk();
+      const m=l.i.filter(i=>i.str.trim());const v=m.find(i=>/Vantaggi/.test(i.str)),a=m.find(i=>/Abilit/.test(i.str));
+      blk={bg:ent,items:[],vc:(v?v.x+v.w/2:l.x+20),ac:(a?a.x+a.w/2:l.x+120)};mode='blk';continue}
+     if(isCalB(l)&&/^Vantaggi\s*$/i.test(t)){endBlk();const v=l.i.find(i=>/Vantaggi/.test(i.str));blk={bg:ent,items:[],vc:v.x+v.w/2,ac:v.x+v.w/2+9999};mode='blk';continue}
+     if(isCal(l)){
+      if(mode==='blk'&&blk){for(const i of l.i)if(i.str.trim())blk.items.push({str:i.str,x:i.x,w:i.w,y:l.y});continue}
+      if(mode==='pec'){addT(ent,'pec',t);continue}
+      if(mode==='d'){addT(ent,'d',t);continue}}
+     continue}
+    // ----------------------------------------------------- VANTAGGI
+    if(sect==='adv'){
+     if(isH15(l)){endEnt();const m=pdfCost(t);if(m)cost=m;ent=null;mode='';continue}
+     if(isName(l)){
+      if(ent&&ent._adv&&l.h<7.3&&/^\(/.test(t)){ent.cn=notaCosto(t);continue}   // nota di costo a capo
+      ent={_adv:1,n:'',c:cost||1,cn:'',d:''};out.adv.push(ent);
+      const raw=rawName(l);let nm=[],note=[];let inNote=false;
+      raw.forEach(c=>{if(inNote||/^\(/.test(c)){inNote=true;note.push(c)}else{const p=c.indexOf('(');if(p>0){nm.push(c.slice(0,p));inNote=true;note.push(c.slice(p))}else nm.push(c)}});
+      lateName(ent,'n',nm);if(note.length)ent.cn=notaCosto(note.join(' '));mode='d';continue}
+     if(ent&&isBody(l)){addT(ent,'d',t);continue}
+     continue}
+    // ----------------------------------------------------- ARCANI
+    if(sect==='arc'){
+     if(isH15(l)){arcC={carta:'',v:'',vd:'',h:'',hd:''};out.arc.push(arcC);lateName(arcC,'carta',rawName(l));arcM='';continue}
+     if(isH12(l)&&arcC){let m;if(m=t.match(/^Virt[uù]\s*:\s*(.*)$/)){arcC.v=cl(m[1]);arcM='v';continue}
+      if(m=t.match(/^Hubris\s*:\s*(.*)$/)){arcC.h=cl(m[1]);arcM='h';continue}}
+     if(arcC&&isBody(l)){if(arcM==='v')addT(arcC,'vd',t);else if(arcM==='h')addT(arcC,'hd',t)}
+     continue}
+    // ----------------------------------------------------- STREGONERIE
+    if(sect==='sorc'&&sorc){
+     if(isH13(l)){endEnt();sideSkip=true;continue}
+     if(isH15(l)){endEnt();sideSkip=false;
+      if(/^come funziona/i.test(cl(l.t).toLowerCase().replace(/\s+/g,' '))||/^c\s*o\s*m\s*e/i.test(l.t)){grp='\u0001';continue}
+      const raw=rawName(l);const gobj={g:''};
+      // il gruppo può occupare due righe (es. "Estirpe di fuoco:" + "lezioni minori")
+      lateName(gobj,'g',[raw.join('').replace(/\s+/g,'')],x=>cap(x));
+      if(L[k+1]&&isH15(L[k+1])&&Math.abs(L[k+1].y-l.y)<20&&L[k+1].col===l.col){k++;gobj.ch2=rawName(L[k]);pend[pend.length-1].ch=[raw.join('').replace(/\s+/g,'').replace(/:$/,'')+': '+gobj.ch2.join('').replace(/\s+/g,'')]}
+      grp=gobj;continue}
+     if(isH12(l)){endEnt();sideSkip=false;
+      if(grp==='\u0001'){ent={n:cl(t),g:'\u0001',d:''}}else ent={n:cl(t),g:grp,d:''};continue}
+     if(sideSkip)continue;
+     if(ent&&(isBody(l)||/AJensonPro/.test(l.f))){
+      addT(ent,'d',/^>\s*/.test(t)?'• '+t.replace(/^>\s*/,''):t);continue}
+     continue}
+    // ----------------------------------------------------- STILI DI DUELLO
+    if(sect==='stili'){
+     if(isH15(l)){endStil();stil={n:'',r:'',d:'',_h:1};lateName(stil,'n',rawName(l));continue}
+     if(isH12(l)&&/^Bonus di Stile/i.test(t)&&stil){stil.r=cl(t.replace(/^Bonus di Stile\s*:\s*/i,''));stil._b=1;continue}
+     if(stil&&stil._b&&(isBody(l)||/AJenson/.test(l.f))){addT(stil,'d',t.replace(/^>\s*/,'• '));continue}
+     continue}
+   }
+   // fine pagina: per i blocchi aperti non serve chiudere (possono continuare nella colonna/pagina seguente)
+  },
+  result(){endBlk();endEnt();endStil();
+   // nomi con lessico
+   pend.forEach(p=>{p.o[p.k]=p.fn(fixName(p.ch))});
+   // stili
+   out.bg.forEach(b=>{b.d=cl(b.d);b.pec=cl(b.pec);b.res=cl(b.res);delete b._h});
+   // Vantaggi: rimuove quelli senza nome/descrizione
+   out.adv=out.adv.filter(a=>a.n&&a.d.length>15);out.adv.forEach(a=>{a.d=cl(a.d);delete a._adv});
+   out.arc=out.arc.filter(a=>a.carta&&a.v&&a.h);
+   // stregonerie: gruppi, regole
+   for(const k of Object.keys(out.lists)){const L=out.lists[k];
+    L.items=L.items.map(i=>{const g=typeof i.g==='object'?i.g.g:i.g;return {n:i.n,g:g,d:cl(i.d.replace(/\n•/g,'\n•')).replace(/\s*•\s*/g,'\n• ').trim()}});
+    const real=L.items.filter(i=>i.g!=='\u0001'&&!/significati/i.test(i.g||''));
+    const keep=real.length?real:L.items.filter(i=>!/significati/i.test(i.g||''));
+    L.items=keep.map(i=>{if(i.g==='\u0001')i.g='Poteri';
+     if(/\n• (Minore|Maggiore)\b/.test(i.d)){const lines=i.d.split('\n');const intro=[];const subs=[];
+      lines.forEach(ln=>{const m=ln.match(/^• (Minore|Maggiore)\.?\s*(.*)$/);if(m)subs.push({n:m[1],d:m[2]});else if(subs.length)subs[subs.length-1].d+=' '+ln.replace(/^•\s*/,'');else intro.push(ln)});
+      i.d=intro.join(' ').trim();i.subs=subs}
+     return i}).filter(i=>i.d.length>=25||(i.subs&&i.subs.length));
+    if(!L.items.length)delete out.lists[k]}
+   // stili
+   endStil();if(stiliOut.length)out.lists['stili']={t:'Stili di Duello',items:stiliOut.filter(s=>s.n&&s.d)};
+   // nazioni: allineamento ai nomi dei background
+   const names=[...new Set(out.bg.map(b=>b.naz).filter(Boolean))];
+   const norm=s=>s.toLowerCase().replace(/[’']/g,'').replace(/[^a-zà-ú]/g,'');
+   const nat={};for(const k of Object.keys(out.nat)){let key=k;const nk=norm(k.replace(/^Rep\.\s*/,'Repubblica '));
+    const hit=names.find(n=>norm(n)===nk)||names.find(n=>norm(n).startsWith(nk)||nk.startsWith(norm(n))||nk.endsWith(norm(n)));if(hit)key=hit;nat[key]=out.nat[k]}
+   out.nat=nat;return out}
+ };
+ function notaCosto(s){const m=cl(s).match(/\((\d)\s*se\s+([^)]+)\)/i);return m?m[1]+' se '+cap(m[2]):''}
+ function pdfCost(t){const m=String(t).match(/(\d)\s*p\s*u\s*n\s*t/i)||String(t).match(/a\s*(\d)/i);return m?+m[1]:0}
+}
+if(typeof module!=='undefined')module.exports=mkParserN;
+
 // ---------- catalogo importato ----------
 const CK='ss-cat-v1';let CAT={v:0,bg:[],adv:[],arc:[],nat:{},lists:{}};
 try{const j=JSON.parse(localStorage.getItem(CK));if(j&&j.v)CAT=Object.assign(CAT,j)}catch(e){}
@@ -255,11 +461,13 @@ const lk=(a,n)=>a.find(x=>x.n.toLowerCase()==String(n||'').trim().toLowerCase())
 const advF=n=>lk(CAT.adv,n),bgF=(n,z)=>CAT.bg.find(x=>x.n.toLowerCase()==String(n||'').trim().toLowerCase()&&(!z||x.naz==z))||lk(CAT.bg,n);
 const nazList=()=>[...new Set([...NAZ0,...Object.keys(CAT.nat),...CAT.bg.map(b=>b.naz).filter(Boolean)])];
 const BR=/bold|black|heavy|semibold|demi/i;
-const srcOf=n=>/base/i.test(n)?'Manuale Base':/mezzaluna|impero/i.test(n)?'Impero della Mezzaluna':/terre|fuoco/i.test(n)?'Terre dell’Oro e del Fuoco':/vol[._\- ]*2/i.test(n)?'Nazioni di Théah 2':/vol[._\- ]*1|nazioni/i.test(n)?'Nazioni di Théah 1':/nuovo|mondo/i.test(n)?'Nuovo Mondo':n.replace(/\.pdf$/i,'').slice(0,28);
+const srcOf=n=>/navigavia/i.test(n)?'Navigavia':/base/i.test(n)?'Manuale Base':/mezzaluna|impero/i.test(n)?'Impero della Mezzaluna':/terre|fuoco/i.test(n)?'Terre dell’Oro e del Fuoco':/vol[._\- ]*2/i.test(n)?'Nazioni di Théah 2':/vol[._\- ]*1|nazioni/i.test(n)?'Nazioni di Théah 1':/nuovo|mondo/i.test(n)?'Nuovo Mondo':n.replace(/\.pdf$/i,'').slice(0,28);
 const mrg=(a,b,s,key)=>{const m=new Map((a||[]).map(x=>[key(x),x]));for(const x of b){x.s=s;m.set(key(x),x)}return[...m.values()]};
 async function readPdf(f,st,idx,tot){
- const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer()),fontExtraProperties:true}).promise,P=mkParser7(),fonts={};let nb=0;
- for(let n=1;n<=pdf.numPages;n++){if(st)st.textContent='File '+idx+' di '+tot+' · pagina '+n+' di '+pdf.numPages+'…';
+ const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer()),fontExtraProperties:true}).promise,fonts={};let nb=0,P=mkParser7();
+ if(/navigavia/i.test(f.name))P=mkParserN();
+ else{for(const q of [2,3,4]){try{const tx=(await(await pdf.getPage(q)).getTextContent()).items.map(i=>i.str).join(' ');if(/navigavia/i.test(tx)){P=mkParserN();break}}catch(e){}}}
+ for(let n=1;n<=pdf.numPages;n++){if(P.want&&!P.want(n,pdf.numPages))continue;if(st)st.textContent='File '+idx+' di '+tot+' · pagina '+n+' di '+pdf.numPages+'…';
   const pg=await pdf.getPage(n),tc=await pg.getTextContent();
   const need=[...new Set(tc.items.filter(t=>t.fontName&&!(t.fontName in fonts)).map(t=>t.fontName))];
   if(need.length){try{await pg.getOperatorList()}catch(e){}
@@ -276,7 +484,7 @@ async function importPdf(files){
     const nl_=Object.values(r.lists).reduce((a,l)=>a+l.items.length,0);
     if(!r.bg.length&&!r.adv.length&&!r.arc.length&&!nl_){out.push(f.name+': nessun contenuto riconosciuto (è un manuale di 7th Sea 2ª edizione?)');continue}
     CAT.bg=mrg(CAT.bg,r.bg,s,x=>x.naz+'|'+x.n.toLowerCase());
-    CAT.adv=mrg(CAT.adv,r.adv,s,x=>x.n.toLowerCase());
+    CAT.adv=mrg(CAT.adv,r.adv,s,x=>x.n.toLowerCase()+(x.s==='Navigavia'?'|nav':''));
     CAT.arc=mrg(CAT.arc,r.arc,s,x=>x.carta.toLowerCase());
     Object.assign(CAT.nat,r.nat);
     for(const k in r.lists){const o=CAT.lists[k];CAT.lists[k]={t:r.lists[k].t,items:mrg(o&&o.items,r.lists[k].items,s,x=>x.n.toLowerCase())}}
