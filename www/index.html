@@ -77,7 +77,7 @@ const CFG7=[
  [/cavalieri/,[['Il Gesa del Cavaliere','Regole'],['I Cavalieri di Elilodd','Cavalieri di Elilodd',1],['Gli Incanti','Fortuna',1],['Battere gli Sgherri','Incanti']]],
  [/dar_matushki/,[['Doni','Doni',1],['Restrizioni','Restrizioni',1]]],
  [/^sorc:porté$/,[['Trarre','Regole'],['Marchi Minori','Marchi Minori'],['Marchi Maggiori','Marchi Maggiori']]],
- [/sanderis|melbur/,[['Patti','Regole']]],
+ [/sanderis|melbur/,[['Patti','Regole'],['Oscurità','Patti'],['Conoscenza','Patti']]],
  [/sorte/,[['Punti Eroe e Staffilate','Regole'],['Lettura','Trame'],['Arcani','Trame']]],
  [/secondo_profeta/,[['Miracoli','Miracoli',1],['Cammini','Cammini',1]]],
  [/chozeh/,[['Creare Amuleti e Scritti','Regole']]],
@@ -92,19 +92,20 @@ const CFG7=[
  [/wañuy/,[['Simboli di Morte','Regole'],['Manifestazioni e Alterazioni','Regole']]],
  [/wayak/,[['Ahpulul','Regole'],['Anelli delle Orecchie di Kinich Ahau','Reliquie'],['Pixan','Reliquie Minori']]]
 ];
-function post7(k,items){
+function post7(k,items){const cl=x=>String(x).replace(/\s+/g," ").replace(/([a-zà-ú])- ([a-zà-ú])/g,"$1$2").trim();
  const rule=CFG7.find(c=>c[0].test(k));const R=rule?rule[1]:[];let g='',res=[];
  for(const i of items){const r=R.find(x=>x[0]===i.n);let drop=false;
   if(r){g=r[1]||'';drop=!r[1]||r[2]}
   const ri=i.r;delete i.r;if(drop)continue;
   if(ri&&!/cavalieri/.test(k)&&!(r&&r[1]))i.g=ri;else if(g)i.g=g;
-  if(/sanderis|melbur/.test(k)&&/Favori (Maggiori|Minori):/.test(i.d)){
-   const el=i.n;const parts=i.d.split(/(?=Favori (?:Maggiori|Minori):)/);
-   for(const p of parts){const m=p.match(/^Favori (Maggiori|Minori):\s*(.*)$/);if(!m)continue;
-    m[2].split(/\s*•\s*/).filter(x=>x.length>8).forEach(b=>{
-     const nm=b.split(/[,.;:]/)[0].split(' ').slice(0,7).join(' ');
-     res.push({n:nm+' ('+el+')',g:'Patto '+el+' · Favori '+m[1],d:b})})}
-   continue}
+  if(i.g==='Regole')continue;
+  i.d=cl(i.d);
+  const sp=(re)=>{const parts=i.d.split(re);if(parts.length<3)return false;i.d=cl(parts[0]);i.subs=[];
+   for(let x=1;x<parts.length;x+=2){const body=parts[x+1]||'';const bl=body.split(/\s*•\s*/).map(cl).filter(Boolean);
+    i.subs.push({n:parts[x],d:/•/.test(body)?bl.join('\n'):cl(body)})}return true};
+  if(/galdr/.test(k))sp(/\b(Stort Merke|Litet Merke):?\s*/);
+  else if(/sanderis|melbur/.test(k)){if(!sp(/\b(Favori Maggiori|Favori Minori):\s*/))continue}
+  else if(/sorte/.test(k))sp(/\b(Maggiore|Minore):\s*/);
   res.push(i)}
  return res}
 function mkParser7(){
@@ -236,6 +237,7 @@ if(typeof module!='undefined')module.exports=mkParser7;
 const CK='ss-cat-v1';let CAT={v:0,bg:[],adv:[],arc:[],nat:{},lists:{}};
 try{const j=JSON.parse(localStorage.getItem(CK));if(j&&j.v)CAT=Object.assign(CAT,j)}catch(e){}
 let FLT='',bgSel='',advC='0',lsSel='';
+const subsH=o=>(o.subs||[]).map(x=>`<p><b>${esc(x.n)}</b><br>${nl(x.d)}</p>`).join('');
 const hid=n=>FLT&&!String(n).toLowerCase().includes(FLT)?' style="display:none"':'';
 const lk=(a,n)=>a.find(x=>x.n.toLowerCase()==String(n||'').trim().toLowerCase());
 const advF=n=>lk(CAT.adv,n),bgF=(n,z)=>CAT.bg.find(x=>x.n.toLowerCase()==String(n||'').trim().toLowerCase()&&(!z||x.naz==z))||lk(CAT.bg,n);
@@ -256,6 +258,7 @@ async function importPdf(files){
  if(typeof pdfjsLib==='undefined'){alert('Il lettore PDF è disponibile solo nell\'app installata (APK o WebApp), non in questa anteprima.');return}
  const st=document.getElementById('imps'),out=[];
  try{pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js';
+  if(CAT.sv!==2){CAT.bg=[];CAT.adv=[];CAT.arc=[];CAT.nat={};CAT.lists={}}
   for(let i=0;i<files.length;i++){const f=files[i],s=srcOf(f.name);
    try{const{P,nb}=await readPdf(f,st,i+1,files.length),r=P.result();
     const nl_=Object.values(r.lists).reduce((a,l)=>a+l.items.length,0);
@@ -265,7 +268,7 @@ async function importPdf(files){
     CAT.arc=mrg(CAT.arc,r.arc,s,x=>x.carta.toLowerCase());
     Object.assign(CAT.nat,r.nat);
     for(const k in r.lists){const o=CAT.lists[k];CAT.lists[k]={t:r.lists[k].t,items:mrg(o&&o.items,r.lists[k].items,s,x=>x.n.toLowerCase())}}
-    CAT.v=1;localStorage.setItem(CK,JSON.stringify(CAT));
+    CAT.v=1;CAT.sv=2;localStorage.setItem(CK,JSON.stringify(CAT));
     out.push(s+': '+r.bg.length+' background, '+r.adv.length+' vantaggi, '+r.arc.length+' arcani, '+nl_+' voci di stregoneria e stili'+(nb?'':' — ATTENZIONE: grassetto non rilevato, il risultato potrebbe essere incompleto'))}
    catch(e){out.push(f.name+': errore nella lettura ('+(e&&e.message||e)+')')}}
   alert(out.join('\n'))}
@@ -307,8 +310,8 @@ const SECS=[
 ()=>{const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);return `<div class="card"><h2>Dettagli</h2><div class="g2">${I('c.fama','Fama (un aggettivo)')}${I('c.ling','Lingue (una per Grado di Acume: '+c.tr.acu+')')}${I('c.soc','Società Segreta')}${I('c.fav','Favore verso la società','number')}${I('c.ric','Ricchezza (punti a inizio sessione)','number')}</div></div>
  <div class="card"><h2>Ferite · Spirale della Morte</h2><div class="row" style="align-items:center">${spiral(c)}<div style="flex:1"><div class="big">${w} <span class="hint">Ferite</span> · ${d} <span class="hint">★ Drammatiche</span></div>${ef.length?ef.map(e=>`<div class="${e=='INERME'?'crisi':'hint'}">• ${e}</div>`).join(''):'<div class="hint">Nessun effetto.</div>'}<div class="row" style="margin-top:8px"><button class="o" data-act="ferclr">Azzera ferite</button></div></div></div><p class="hint">Tocca una casella per riempire la spirale fino a lì; toccala di nuovo per svuotare da lì in poi. Le stelle sono le Ferite Drammatiche.</p></div>`},
 ()=>{const c=S.c,L=CAT.lists,ks=Object.keys(L);if(ks.length&&!L[lsSel])lsSel=ks[0];
- return `${CAT.v?catCard():''}${fltCard()}<div class="card"><h2>Stregonerie, Stili di Duello e altro</h2>${(()=>{const ord=[];c.pot.forEach((p,i)=>{const k=p.k||'Altro';if(!ord.includes(k))ord.push(k)});return ord.map(k=>`<h3>${esc(k)} <span class="chip">${c.pot.filter(p=>(p.k||'Altro')==k).length}</span></h3>`+c.pot.map((p,i)=>(p.k||'Altro')==k?`<div class="item"><div class="row"><b class="wn" style="flex:1">${esc(p.n)}</b>${p.g?`<span class="chip">${esc(p.g)}</span>`:''}</div><input type="text" data-p="c.pot.${i}.nota" value="${esc(p.nota||'')}" placeholder="Grado / note">${p.d?`<details><summary class="mut">Descrizione</summary><p>${nl(p.d)}</p></details>`:''}<button class="x" data-act="delpot" data-i="${i}">Rimuovi</button></div>`:'').join('')).join('')})()||'<p class="mut">Nulla di scelto.</p>'}<button class="o" data-act="addpotm">+ Voce manuale</button></div>
- ${ks.length?`<div class="card"><h2>Dal catalogo</h2><select id="lsc">${ks.map(k=>`<option value="${esc(k)}" ${k==lsSel?'selected':''}>${esc(L[k].t)}${c.pot.filter(p=>p.k==L[k].t).length?' ✓'+c.pot.filter(p=>p.k==L[k].t).length:''}</option>`).join('')}</select>${(()=>{let lg=null;return L[lsSel].items.map((it,j)=>{const o=c.pot.some(p=>p.n==it.n&&p.k==L[lsSel].t);const gh=(it.g||'')!==lg?(lg=it.g||'',lg?`<h3>${esc(lg)}</h3>`:''):'';return gh+`<div class="mw" data-n="${esc(it.n.toLowerCase())}"${hid(it.n)}><div class="row"><b class="wn" style="flex:1">${esc(it.n)}</b><button class="${o?'o':''}" data-act="addpot" data-j="${j}">${o?'✓ Scelto (tocca per togliere)':'+ Scegli'}</button></div><details><summary class="mut">Descrizione${it.s?' · '+esc(it.s):''}</summary><p>${nl(it.d)}</p></details></div>`}).join('')})()}</div>`:`<div class="card"><p class="mut">Importa i manuali (in <b>Background e Vantaggi</b>) per avere le liste di stregonerie e stili di duello.</p></div>`}`},
+ return `${CAT.v?catCard():''}${CAT.v&&CAT.sv!==2?'<div class="card" style="border-color:#e0a040"><b>⚠ Catalogo vecchio.</b> Reimporta i PDF (Background e Vantaggi → Importa) per avere rune, patti e poteri divisi correttamente.</div>':''}${fltCard()}<div class="card"><h2>Stregonerie, Stili di Duello e altro</h2>${(()=>{const ord=[];c.pot.forEach((p,i)=>{const k=p.k||'Altro';if(!ord.includes(k))ord.push(k)});return ord.map(k=>`<h3>${esc(k)} <span class="chip">${c.pot.filter(p=>(p.k||'Altro')==k).length}</span></h3>`+c.pot.map((p,i)=>(p.k||'Altro')==k?`<div class="item"><div class="row"><b class="wn" style="flex:1">${esc(p.n)}</b>${p.g?`<span class="chip">${esc(p.g)}</span>`:''}</div><input type="text" data-p="c.pot.${i}.nota" value="${esc(p.nota||'')}" placeholder="Grado / note">${p.d?`<details><summary class="mut">Descrizione</summary><p>${nl(p.d)}</p>${subsH(p)}</details>`:''}<button class="x" data-act="delpot" data-i="${i}">Rimuovi</button></div>`:'').join('')).join('')})()||'<p class="mut">Nulla di scelto.</p>'}<button class="o" data-act="addpotm">+ Voce manuale</button></div>
+ ${ks.length?`<div class="card"><h2>Dal catalogo</h2><select id="lsc">${ks.map(k=>`<option value="${esc(k)}" ${k==lsSel?'selected':''}>${esc(L[k].t)}${c.pot.filter(p=>p.k==L[k].t).length?' ✓'+c.pot.filter(p=>p.k==L[k].t).length:''}</option>`).join('')}</select>${(()=>{let lg=null;return L[lsSel].items.map((it,j)=>{const o=c.pot.some(p=>p.n==it.n&&p.k==L[lsSel].t);const gh=(it.g||'')!==lg?(lg=it.g||'',lg?`<h3>${esc(lg)}</h3>`:''):'';return gh+`<div class="mw" data-n="${esc(it.n.toLowerCase())}"${hid(it.n)}><div class="row"><b class="wn" style="flex:1">${esc(it.n)}</b><button class="${o?'o':''}" data-act="addpot" data-j="${j}">${o?'✓ Scelto (tocca per togliere)':'+ Scegli'}</button></div><details><summary class="mut">Descrizione${it.s?' · '+esc(it.s):''}</summary><p>${nl(it.d)}</p>${subsH(it)}</details></div>`}).join('')})()}</div>`:`<div class="card"><p class="mut">Importa i manuali (in <b>Background e Vantaggi</b>) per avere le liste di stregonerie e stili di duello.</p></div>`}`},
 ()=>`<div class="card"><h2>Armi e oggetti importanti</h2>${S.c.arm.map((a,i)=>`<div class="item"><div class="g2">${I(`c.arm.${i}.n`,'Nome')}${T(`c.arm.${i}.d`,'Descrizione ed effetti')}</div><button class="x" data-act="delarm" data-i="${i}">Rimuovi</button></div>`).join('')}<button class="o" data-act="addarm">+ Aggiungi</button></div><div class="card"><h2>Nave</h2>${T('c.nave','Nome, Background e dettagli della nave')}</div><div class="card"><h2>Note</h2>${T('c.note','Note')}</div><div class="card"><button class="x" data-act="reset">Azzera questa scheda</button></div>`];
 function riep(){const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);
  const box=(l,v,i)=>`<div class="mb"><span>${l}</span><b>${v}</b>${i?`<i>${i}</i>`:''}</div>`;
@@ -322,7 +325,7 @@ function riep(){const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);
  <h3>Background</h3>${c.bg.map(b=>{const f=bgF(b.n,b.naz)||{};return `<div class="mw"><b class="wn">${esc(b.n)}</b>${b.naz?' · '+esc(b.naz):''}${f.d?`<div class="hint">${esc(f.d)}</div>`:''}<p><i>Peculiarità:</i> ${esc(b.pec)}</p></div>`}).join('')||'<p class="mut">Nessuno.</p>'}
  <h3>Vantaggi</h3>${c.adv.map(a=>{const f=advF(a.n)||{};return `<div class="mw"><b class="wn">${esc(a.n)}</b>${a.nota?' ('+esc(a.nota)+')':''}${f.d?`<p>${nl(f.d)}</p>`:''}</div>`}).join('')||'<p class="mut">Nessuno.</p>'}
  <h3>Arcani</h3>${v?`<div class="mw"><b class="wn">Virtù: ${esc(v.v)}</b> (${esc(v.carta)})<p>${nl(v.vd)}</p></div>`:''}${h?`<div class="mw"><b class="wn">Hubris: ${esc(h.h)}</b> (${esc(h.carta)})<p>${nl(h.hd)}</p></div>`:''}${!v&&!h?`<p>${esc([c.virt.n&&'Virtù: '+c.virt.n,c.hub.n&&'Hubris: '+c.hub.n].filter(Boolean).join(' · '))||'<span class="mut">Nessuno.</span>'}</p>`:''}
- ${c.pot.length?'<h3>Stregoneria e Stili</h3>'+[...c.pot].sort((x,y)=>(x.k||'').localeCompare(y.k||'')).map(p=>`<div class="mw"><b class="wn">${esc(p.n)}</b> <span class="chip">${esc(p.k||'')}${p.g?' · '+esc(p.g):''}</span>${p.nota?' ('+esc(p.nota)+')':''}${p.d?`<p>${nl(p.d)}</p>`:''}</div>`).join(''):''}
+ ${c.pot.length?'<h3>Stregoneria e Stili</h3>'+[...c.pot].sort((x,y)=>(x.k||'').localeCompare(y.k||'')).map(p=>`<div class="mw"><b class="wn">${esc(p.n)}</b> <span class="chip">${esc(p.k||'')}${p.g?' · '+esc(p.g):''}</span>${p.nota?' ('+esc(p.nota)+')':''}${p.d?`<p>${nl(p.d)}</p>${subsH(p)}`:''}</div>`).join(''):''}
  <h3>Storie</h3>${c.storie.filter(s=>s.tema||s.concl).map(s=>`<div class="mw"><b class="wn">${esc(s.tema)}</b>${s.concl?`<p><i>Conclusione:</i> ${esc(s.concl)}</p>`:''}${s.ric?`<p><i>Ricompensa:</i> ${esc(s.ric)}</p>`:''}${s.atti.map((a,j)=>`<div>${a.d?'☑':'☐'} Atto ${j+1}: ${esc(a.t)}</div>`).join('')}</div>`).join('')||'<p class="mut">Nessuna.</p>'}
  <h3>Dettagli</h3><p>${[c.ling&&'<b>Lingue:</b> '+esc(c.ling),c.soc&&'<b>Società:</b> '+esc(c.soc)+' (Favore '+c.fav+')'].filter(Boolean).join('<br>')||'<span class="mut">—</span>'}</p>
  ${c.arm.filter(a=>a.n||a.d).length?'<h3>Oggetti</h3>'+c.arm.filter(a=>a.n||a.d).map(a=>`<div class="mw"><b class="wn">${esc(a.n)}</b>${a.d?`<p>${nl(a.d)}</p>`:''}</div>`).join(''):''}${c.nave?`<h3>Nave</h3><p>${nl(c.nave)}</p>`:''}</div>`}
@@ -376,7 +379,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(
  else if(a=='delstoria')c.storie.splice(i,1);
  else if(a=='addatto')c.storie[i].atti.push({t:'',d:0});
  else if(a=='delatto')c.storie[i].atti.splice(j,1);
- else if(a=='addpot'){const L=CAT.lists[lsSel],it=L.items[j],x=c.pot.findIndex(p=>p.n==it.n&&p.k==L.t);if(x>=0)c.pot.splice(x,1);else c.pot.push({n:it.n,k:L.t,g:it.g||'',d:it.d,nota:''})}
+ else if(a=='addpot'){const L=CAT.lists[lsSel],it=L.items[j],x=c.pot.findIndex(p=>p.n==it.n&&p.k==L.t);if(x>=0)c.pot.splice(x,1);else c.pot.push({n:it.n,k:L.t,g:it.g||'',d:it.d,subs:it.subs||[],nota:''})}
  else if(a=='addpotm')c.pot.push({n:'Nuova voce',k:'',d:'',nota:''});
  else if(a=='delpot')c.pot.splice(i,1);
  else if(a=='addarm')c.arm.push({n:'',d:''});
