@@ -34,3 +34,7 @@ Nella scheda, sezione **3. Background e Vantaggi**, usa **Manuali** e scegli i P
 (Manuale Base, Impero della Mezzaluna, Terre dell'Oro e del Fuoco, Nazioni di Théah 1 e 2, Nuovo Mondo): puoi
 sceglierne più d'uno insieme. L'app legge sul dispositivo Background, Vantaggi, Arcani, bonus di nazione e le liste di
 stregoneria, Stili di Duello e Manovre di Duello (dal Manuale Base; compaiono nel Riepilogo quando l'Eroe ha il Vantaggio Sala d'Armi); il testo dei manuali **non** è incluso nell'app e resta solo sul tuo dispositivo.
+
+## Schede Malvagio (GM)
+Nella scheda **GM → Malvagi** puoi creare Malvagi con Forza, Influenza, Ferite (Forza + Drammatiche), Vantaggi (5 + Forza punti), Arcani, Stregonerie/Stili/Manovre (Grado = metà Forza), Macchinazioni e Qualità Mostruose. I dati sono salvati con il GM e inclusi nell'Esporta.
+Nella scheda **GM → Squadre** gestisci le Squadre di Sgherri: Forza attuale/iniziale, Tipo con Capacità (Punti Pericolo), unione e divisione, Squadre di Mostri con Qualità.
