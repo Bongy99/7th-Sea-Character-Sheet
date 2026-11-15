@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>7th Sea – Scheda Eroe</title>
+<script src="lib/pdf.min.js"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14263f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="7th Sea">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3eee2;--card:#fffdf7;--ink:#1f2a3a;--mut:#6f7684;--line:#d6ccb6;--acc:#1d4f7a;--acc2:#b9852a;--empty:#e8e1cf;--bad:#a8322b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101722;--card:#18212f;--ink:#e8edf4;--mut:#93a0b3;--line:#2e3b4f;--acc:#6fb0e6;--acc2:#e3b55b;--empty:#243146;--bad:#ef7b73}}
+@media (prefers-color-scheme:dark){}
+:root[data-theme="dark"]{--bg:#101722;--card:#18212f;--ink:#e8edf4;--mut:#93a0b3;--line:#2e3b4f;--acc:#6fb0e6;--acc2:#e3b55b;--empty:#243146;--bad:#ef7b73}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 Georgia,'Times New Roman',serif}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--card);border-bottom:2px solid var(--acc);display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--card)}
+h1{font-size:18px;margin:0 auto 0 0;color:var(--acc)}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--acc);margin:0 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+main{max-width:1000px;margin:0 auto;padding:12px;display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.g{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.g2{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+label{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+input,select,textarea,button{font:inherit;color:var(--ink)}
+input[type=text],input[type=number],input[type=search],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+textarea{min-height:60px;resize:vertical}
+button{background:var(--acc);color:var(--bg);border:0;border-radius:6px;padding:6px 12px;cursor:pointer}
+button.o{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+button.x{background:transparent;color:var(--bad);border:1px solid var(--bad);padding:3px 8px}
+button.on{background:var(--acc2);color:#222}
+.tab{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.tab.on{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.big{font-size:26px;font-weight:bold;color:var(--acc2);line-height:1.1}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+.pill{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:3px 10px;margin:2px;font-size:13px}
+.crisi{color:var(--bad);font-weight:bold;font-size:12px}
+.item{border:1px dashed var(--line);border-radius:8px;padding:8px;margin-bottom:8px}
+.mut{color:var(--mut);font-size:12px}
+.hid{display:none}
+.w100{flex-basis:100%}#nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}#nav button{white-space:nowrap;flex:none}#fpbar{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--acc2);border-radius:8px;padding:4px 10px}#fpbar input{width:70px;text-align:center;font-weight:bold}.cur{display:flex;gap:6px;align-items:center}.cur input{text-align:center}.hint{font-size:11px;color:var(--mut)}.ms h3{font-variant:small-caps;letter-spacing:.06em;border-bottom:2px solid var(--acc);color:var(--acc);margin:16px 0 6px;font-size:17px}.mg{display:grid;gap:6px;grid-template-columns:repeat(auto-fit,minmax(105px,1fr))}.mb{border:1px solid var(--line);border-radius:6px;padding:6px;text-align:center}.mb span{display:block;font-size:10px;letter-spacing:.06em;color:var(--mut);text-transform:uppercase}.mb b{font-size:22px;color:var(--acc2)}.mb i{display:block;font-size:11px;color:var(--mut)}.mn{font-size:28px;font-weight:bold;font-variant:small-caps}.mw{padding:6px 0;border-bottom:1px dotted var(--line)}.mw p{margin:4px 0 0}.wn{font-variant:small-caps;font-size:16px}
+.sp{display:flex;flex-direction:column;gap:6px;align-items:flex-start}.sr{display:flex;gap:5px;align-items:center}.sr button{width:30px;height:30px;padding:0;border-radius:50%;background:transparent;border:2px solid var(--acc);color:var(--acc);font-size:15px;line-height:1}.sr button.f{background:var(--bad);border-color:var(--bad)}.sr button.st{border-radius:6px;transform:rotate(45deg)}.sr button.st.f{background:var(--bad)}.sr button.st span{display:inline-block;transform:rotate(-45deg)}
+.dots{display:inline-flex;gap:3px}.dots i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--acc);display:inline-block}.dots i.f{background:var(--acc2);border-color:var(--acc2)}
+.rk{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px dotted var(--line)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin:1px;font-size:12px}
+</style></head><body>
+<header><h1>⚓ 7th Sea · Scheda Eroe</h1>
+<button class="tab" data-act="tab" data-v="home">🏠 Eroi</button><button class="tab" data-act="tab" data-v="sheet">Scheda</button>
+<button class="tab" data-act="tab" data-v="riep">📖 Riepilogo</button><button class="tab" data-act="tab" data-v="gm">GM</button><div id="nav" class="w100"></div><div id="fpbar" class="w100"></div></header>
+<main id="app"></main>
+<script>
+const TR=[['vig','Vigore'],['gra','Grazia'],['ris','Risolutezza'],['acu','Acume'],['pan','Panache']];
+const SKL=['Allettare','Arte della Guerra','Atletica','Cavalcare','Convincere','Empatia','Esibirsi','Furto','Intimidire','Istruzione','Mira','Mischia','Nascondersi','Navigazione','Notare','Rissa'];
+const NAZ0=['Avalon','Inismore','Marche delle Highland','Castille','Eisen','Montaigne','Sarmatia','Ussura','Vestenmennavenjar','Vodacce'];
+const SEC=['Identità','Tratti e Abilità','Background e Vantaggi','Arcani e Storie','Dettagli e Ferite','Stregoneria e Duello','Equipaggiamento e Note'];
+const KEY='ss-app-v1';
+const def=()=>({c:{nome:'',naz:'',conc:'',asp:'',mot:'',tr:{vig:2,gra:2,ris:2,acu:2,pan:2},ab:{},bg:[],adv:[],virt:{n:'',carta:''},hub:{n:'',carta:''},storie:[{tema:'',concl:'',ric:'',atti:[{t:'',d:0}]}],fama:'',ling:'',soc:'',fav:2,ric:0,fer:Array(20).fill(0),ph:1,pot:[],arm:[],zaino:[],nave:'',note:''}});
+let S={chars:[],gm:{pp:0,storie:[],note:''},cur:null,c:null},tab='home',sec=0;
+try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.chars)S=Object.assign(S,j)}catch(e){}
+S.gm=S.gm||{pp:0,storie:[],note:''};S.c=S.chars[S.cur]||null;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({chars:S.chars,gm:S.gm,cur:S.cur}))}catch(e){}};
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const nl=x=>esc(x).replace(/\n/g,'<br>');
+const get=p=>p.split('.').reduce((o,k)=>o?.[k],S);
+const put=(p,v)=>{const k=p.split('.'),l=k.pop();k.reduce((o,x)=>o[x],S)[l]=v};
+const I=(p,l,t='text')=>`<div><label>${l}</label><input type="${t}" data-p="${p}" value="${esc(get(p))}"></div>`;
+const T=(p,l)=>`<div><label>${l}</label><textarea data-p="${p}">${esc(get(p))}</textarea></div>`;
+function mkParser7(){
+ const out={bg:[],adv:[],arc:[],nat:{},lists:{}};
+ const SK=['Allettare','Arte della Guerra','Atletica','Cavalcare','Convincere','Empatia','Esibirsi','Furto','Intimidire','Istruzione','Mira','Mischia','Nascondersi','Navigazione','Notare','Rissa'];
+ const SKN=new Set(SK.map(s=>s.toLowerCase()));
+ const cl=s=>String(s).replace(/\s+/g,' ').replace(/\s+([,.;:!?])/g,'$1').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').trim();
+ const SMALL=new Set('di del della delle dei degli dello da dal dai dalla la il lo le gli e se per con ai al alle alla sui sul sulla in a un una uno ma o nel nella du des de et'.split(' '));
+ const cap=str=>{const w=cl(str).toLowerCase().split(' ');return w.map((x,i)=>{
+   const m=x.match(/^([dlsn]?[a-z]{0,3}[’'])(.+)$/i);
+   const cw=y=>y.replace(/(^|[(\-\/])(\p{L})/gu,(q,a,b)=>a+b.toUpperCase());
+   if(m&&/^(dell|all|nell|sull|dall|l|d|un|c|quest)[’']$/i.test(m[1]))return (i?m[1]:m[1].replace(/^./,c=>c.toUpperCase()))+cw(m[2]);
+   if(i&&SMALL.has(x))return x;return cw(x)}).join(' ')};
+ const cn=s=>cl(s).replace(/\bSE\b/g,'se');
+ const isUp=s=>/[A-ZÀ-Ú]/.test(s)&&s===s.toUpperCase();
+ let mode='',bgNat='',cost=0,cur=null,blk=null,sec=null,ent=null,pend=null,hy=false,lastH2='',lastH1='',lastCol=-1,natT=null,arcMode=null,arcC=null,stil=null;
+ const addT=(o,k,l)=>{const t=l.txt;if(!t)return;const p=o[k]||'';o[k]=(o['_h'+k]?p:(p?p+' ':''))+t;o['_h'+k]=!!l.hy};
+ let grpN='',pendStyle=null,lastH2Nat=false;
+ function finNat(){if(!natT)return;const it=natT.it,pl=it.filter(x=>/^\+/.test(x.s)),mx=pl.length?Math.min(...pl.map(x=>x.x)):1e9;
+  const bon=it.filter(x=>/^\+/.test(x.s)||x.x>=mx-8).sort((a,b)=>b.y-a.y),nm=it.filter(x=>!/^\+/.test(x.s)&&x.x<mx-8);
+  const rr=[];bon.forEach(b=>{if(/^\+/.test(b.s)||!rr.length)rr.push({y:b.y,b:b.s});else rr[rr.length-1].b+=' '+b.s});
+  nm.forEach(n=>{let best=null,bd=1e9;rr.forEach(r=>{const d=Math.abs(r.y-n.y);if(d<bd){bd=d;best=r}});if(best)(best.n=best.n||[]).push(n)});
+  rr.forEach(r=>{const z=cl((r.n||[]).sort((a,b)=>b.y-a.y).map(x=>x.s).join(' '));if(z)out.nat[z]=cl(r.b)});natT=null}
+ function build(items){
+  const its=items.filter(t=>t.str!==undefined&&t.str.trim()&&t.y>34&&t.h>=8&&!/Riccardo Milone|^ç$/.test(t.str.trim()));
+  const L=[];
+  const cols=[its.filter(t=>t.x<305),its.filter(t=>t.x>=305)];
+  cols.forEach((c,ci)=>{c.sort((a,b)=>b.y-a.y||a.x-b.x);const ls=[];
+   for(const t of c){const l=ls[ls.length-1];if(l&&Math.abs(l.y-t.y)<=2.6)l.i.push(t);else ls.push({y:t.y,i:[t],col:ci})}
+   for(const l of ls){l.i.sort((a,b)=>a.x-b.x);let it=l.i;l.hy=false;
+    if(it.length>1&&it[it.length-1].str.trim()=='-'){l.hy=true;it=it.slice(0,-1);l.i=it}
+    l.txt=cl(it.map(t=>t.str.trim()).join(' '));l.b=it.every(t=>t.b);l.h=Math.max(...it.map(t=>t.h));l.x=it[0].x;l.f=it[0].f;l.fl=it.map(t=>t.f).join(' ')
+    L.push(l)}});
+  return L}
+ const isH18=l=>l.b&&l.h>=17&&!isUp(l.txt)&&/Calluna/i.test(l.f);
+ const isSide=l=>l.h>=17&&isUp(l.txt);
+ const isH14=l=>l.h>=13.5&&l.h<=14.6&&/Calluna/i.test(l.f);
+ const isName=l=>l.b&&l.h>=9.5&&l.h<=10.8&&isUp(l.txt.replace(/[()0-9,–-]/g,''))&&/Calluna/i.test(l.f);
+ const isH12=l=>l.h>=11.5&&l.h<=12.6&&/Calluna/i.test(l.f)&&!l.b;
+ const isIt=l=>/Italic|-It$/i.test(l.f)&&l.h>=10.8&&l.h<=11.6&&/Calluna/i.test(l.f);
+ function finBlk(){if(!blk||!cur){blk=null;return}
+  const vl=blk.items.filter(t=>t.x<blk.cx);
+  const grp=(arr)=>{const ys=[...new Set(arr.map(t=>Math.round(t.y)))].sort((a,b)=>b-a);const r=[];let last=null;
+   for(const y of ys){const s=cl(arr.filter(t=>Math.round(t.y)==y).sort((a,b)=>a.x-b.x).map(t=>t.str.trim()).join(' '));if(!s||/si trova in/.test(s))continue;r.push({y,s})}return r};
+  const V=[],A=[];
+  grp(vl).forEach(l=>{const p=V[V.length-1];if(p&&(p.s.split('(').length>p.s.split(')').length||/^\(|^[a-zà-ú]/.test(l.s)&&!SKN.has(l.s.toLowerCase())))p.s=cl(p.s+' '+l.s);else V.push({s:l.s})});
+  grp(blk.items.filter(t=>t.x>=blk.cx)).forEach(l=>{const p=A[A.length-1];if(p&&!SKN.has(p.s.toLowerCase())&&SKN.has(cl(p.s+' '+l.s).toLowerCase()))p.s=cl(p.s+' '+l.s);else A.push({s:l.s})});
+  cur.vant=V.map(x=>x.s).filter(s=>s&&!/^(Vantaggi|Abilità)$/i.test(s));cur.abil=A.map(x=>x.s).filter(s=>s&&!/^(Vantaggi|Abilità)$/i.test(s));blk=null}
+ function finAdv(){if(ent&&mode!=='sec'&&mode!=='stil'){ent.d=cl(ent.d);delete ent._hd;if(ent.d)out.adv.push(ent)}if(mode==='adv'||mode==='adv0')ent=null}
+ function finSec(){if(ent&&sec){ent.d=cl(ent.d);delete ent._hd;if(ent.d)sec.items.push(ent)}if(mode==='sec')ent=null}
+ function sectionFor(t){t=String(t).replace(/^\((.*)\)$/,'$1');const k='sorc:'+t.toLowerCase().replace(/[^a-zà-ú0-9]+/g,'_');if(!out.lists[k])out.lists[k]={t:t,items:[]};return out.lists[k]}
+ function finStil(){if(stil){stil.d=cl(stil.d);if(stil.d||stil.r){const k='stili';if(!out.lists[k])out.lists[k]={t:'Stili di Duello',items:[]};out.lists[k].items.push({n:stil.n,r:stil.r,d:stil.d})}}stil=null}
+ function body(l){ // testo di corpo
+  const t=l.txt;if(!t)return;
+  if(ent&&mode=='adv'){ent.d=(ent.hyOpen?ent.d:(ent.d?ent.d+' ':''))+t;ent.hyOpen=l.hy;if(l.hy)ent.d=ent.d.replace(/-$/,'')+'';}
+ }
+ return{
+  page(items){
+   const L=build(items);const pgArc=L.some(l=>/^(Virtù|Hubris)\s*:/.test(l.txt)&&l.h>=11.5);
+   let prevH14=null;
+   for(const l of L){
+    const t=l.txt,body=/AJenson/i.test(l.f);
+    const h1=isH18(l),h2=isH14(l),h3=isH12(l)||isIt(l);
+    if(h1||h2){finNat();finBlk();finAdv();finStil();if(sec&&h1){finSec();sec=null}}
+    if(h1){lastH1=t;mode='';cur=null;
+     if(/Nuovi Vantaggi/i.test(t))mode='adv0';else if(/Nuovi Background|Passo 3: Background/i.test(t))mode='bg0';
+     continue}
+    if(h2){let m;
+     if(/^Background\b/i.test(t)&&!/^Due Background/i.test(t)){mode='bg';lastH2Nat=true;bgNat=/^Background Base$/i.test(t)?'':cl(t.replace(/^Background\s+(di|della|delle|dello|dell’|dell')?\s*/i,''));cur=null;lastH2=t;prevH14=t;continue}
+     if(m=t.match(/^Vantaggi da (\d)\s+[Pp]unt/)){mode='adv';cost=+m[1];cur=null;lastH2=t;continue}
+     if(mode=='bg'&&cur===null&&/^(delle|della|dello|dei|degli|di|dell’)\s/i.test(t)&&/^Background/i.test(lastH2)){bgNat=cl(bgNat+' '+t);continue}
+     if(mode=='bg'&&l.b&&!/^(Vantaggi|Passo|Due )/i.test(t)){bgNat=/^(delle|della|dello|dei|degli|di|dell’)\s/i.test(t)&&lastH2Nat?cl(bgNat+' '+t):t.replace(/^Alleanza\s+/i,'');lastH2Nat=true;cur=null;continue}
+     if(pgArc&&!/^Passo/i.test(t)){arcC={carta:t,v:'',vd:'',h:'',hd:''};out.arc.push(arcC);arcMode='c';continue}
+     if(sec){if(ent&&!ent.d){grpN=ent.n;}finSec();ent={n:t,r:grpN||'',d:''};continue}
+     if(/^Come Funziona/i.test(t)){mode='sec';sec=sectionFor(lastH1||'Stregoneria');ent=null;grpN='';continue}
+     pendStyle={n:t};lastH2=t;continue}
+    if(/^NAZIONE\b/.test(t)&&/Aller/i.test(l.f)){finNat();natT={xb:(l.i.find(x=>/BONUS/.test(x.str))||l.i[l.i.length-1]).x,it:[]};continue}
+    if(natT){if(!body&&l.h<=10.2){natT.it.push(...l.i.map(x=>({s:x.str.trim(),x:x.x,y:x.y})));continue}finNat()}
+    if(pgArc&&arcC){let m;
+     if(m=t.match(/^Virt[uù]\s*:?\s*(.*)$/)){arcC.v=cl(m[1]);arcMode='v';continue}
+     if(m=t.match(/^Hubris\s*:\s*(.*)$/)){arcC.h=cl(m[1]);arcMode='h';continue}
+     if(arcMode=='v'){addT(arcC,'vd',l)}else if(arcMode=='h'){addT(arcC,'hd',l)}
+     continue}
+    if(h3&&/^Come Funziona/i.test(t)){mode='sec';finSec();sec=sectionFor(lastH1||'Stregoneria');ent=null;grpN='';continue}
+    if(h3&&/^Bonus di Stile/i.test(t)&&pendStyle){finSec();stil={n:pendStyle.n,r:cl(t.replace(/^Bonus di Stile\s*:\s*/i,'')),d:''};pendStyle=null;mode='stil';continue}
+    if(mode=='stil'&&stil){if(h3&&!body){addT(stil,'d',{txt:t,hy:false});continue}if(body||!h3){addT(stil,'d',l)}continue}
+    if(mode=='sec'&&sec){
+     if(h3){if(ent&&!ent.d){grpN=ent.n}finSec();ent={n:t,r:grpN||'',d:''};continue}
+     if(ent&&body)addT(ent,'d',l);continue}
+    if(mode=='bg'||mode=='bg0'){
+     if(isName(l)&&!/^\(/.test(t)){finBlk();cur={n:cap(t),naz:bgNat,d:'',pec:'',res:'',vant:[],abil:[]};out.bg.push(cur);pend='d';continue}
+     if(!cur)continue;
+     if(/^Peculiarit/i.test(t)&&t.length<18){finBlk();pend='pec';continue}
+     if(/^Vantaggi(\s+Abilit[àa])?\s*$/i.test(t)&&l.h>=10.8){finBlk();
+      const v=l.i.find(x=>/^Vantaggi/.test(x.str.trim())),a=l.i.find(x=>/^Abilit/.test(x.str.trim()));
+      blk={col:l.col,items:[],ys:l.y,vx:v.x+(v.w||40)/2,ax:a?a.x+(a.w||40)/2:v.x+200};blk.cx=(blk.vx+blk.ax)/2;pend='blk';continue}
+     if(pend=='blk'&&blk){blk.items.push(...l.i);continue}
+     if(/^Nota\s*:/i.test(t)){addT(cur,'res',{txt:t.replace(/^Nota\s*:\s*/i,''),hy:l.hy});pend='res';if(/[.!]$/.test(cur.res))pend='d';continue}
+     if(pend=='d'||pend=='pec'||pend=='res'){addT(cur,pend,l);if(pend=='res'&&/[.!]$/.test(cur.res))pend='d'}
+     continue}
+    if(mode=='adv'||mode=='adv0'){
+     if(l.b&&/^\(.*\)$/.test(t)){if(ent)ent.cn=cn(t).replace(/^\(|\)$/g,'');continue}
+     if(ent&&ent.open&&l.b&&!ent.d){ent.cn=cl(ent.cn+' '+cn(t).replace(/\)$/,''));if(/\)/.test(t))ent.open=false;continue}
+     if(isName(l)){finAdv();
+      const mm=t.match(/\((\d+\s*SE.*)$/i);
+      ent={n:cap(t.replace(/\s*\(.*$/,'')),c:cost,cn:mm?cn(mm[1]).replace(/\)$/,''):'',d:'',req:'',open:!!mm&&!/\)/.test(t)};continue}
+     if(ent){
+      if(l.b&&l.h>=9.5&&l.h<=10.8)continue;
+      if(/^Richiede\b/i.test(t)&&!ent.d){ent.req=t.replace(/^Richiede\s*(il\s*)?(Vantaggio\s*)?/i,'');continue}
+      if(/^Non è possibile acquistarlo/i.test(t)&&!ent.d){ent.req=t;continue}
+      if(/Calluna/i.test(l.f)&&l.h>=10.8)continue;
+      addT(ent,'d',l)}
+     continue}
+   }
+  },
+  result(){finBlk();finAdv();finSec();finStil();out.arc=out.arc.filter(a=>a.v&&a.h);
+   for(const k of Object.keys(out.lists)){const L=out.lists[k];L.items=L.items.filter(i=>i.d.length>=25&&!/^Passo\b/.test(i.n));if(/^sorc:sequenz|^sorc:capitolo/.test(k)||!L.items.length)delete out.lists[k]}
+   out.adv.forEach(a=>{delete a.open;delete a._hd});
+   out.bg.forEach(b=>{b.d=cl(b.d);b.pec=cl(b.pec);b.res=cl(b.res);b.naz=b.naz.replace(/^(del|della|dello|dei)\s+(?=\S+$)/i,'');delete b._hd;delete b._hpec;delete b._hres});return out}
+ }}
+
+// ---------- catalogo importato ----------
+const CK='ss-cat-v1';let CAT={v:0,bg:[],adv:[],arc:[],nat:{},lists:{}};
+try{const j=JSON.parse(localStorage.getItem(CK));if(j&&j.v)CAT=Object.assign(CAT,j)}catch(e){}
+let FLT='',bgSel='',advC='0',lsSel='';
+const hid=n=>FLT&&!String(n).toLowerCase().includes(FLT)?' style="display:none"':'';
+const lk=(a,n)=>a.find(x=>x.n.toLowerCase()==String(n||'').trim().toLowerCase());
+const advF=n=>lk(CAT.adv,n),bgF=(n,z)=>CAT.bg.find(x=>x.n.toLowerCase()==String(n||'').trim().toLowerCase()&&(!z||x.naz==z))||lk(CAT.bg,n);
+const nazList=()=>[...new Set([...NAZ0,...Object.keys(CAT.nat),...CAT.bg.map(b=>b.naz).filter(Boolean)])];
+const BR=/bold|black|heavy|semibold|demi/i;
+const srcOf=n=>/base/i.test(n)?'Manuale Base':/mezzaluna|impero/i.test(n)?'Impero della Mezzaluna':/terre|fuoco/i.test(n)?'Terre dell’Oro e del Fuoco':/vol[._\- ]*2/i.test(n)?'Nazioni di Théah 2':/vol[._\- ]*1|nazioni/i.test(n)?'Nazioni di Théah 1':/nuovo|mondo/i.test(n)?'Nuovo Mondo':n.replace(/\.pdf$/i,'').slice(0,28);
+const mrg=(a,b,s,key)=>{const m=new Map((a||[]).map(x=>[key(x),x]));for(const x of b){x.s=s;m.set(key(x),x)}return[...m.values()]};
+async function readPdf(f,st,idx,tot){
+ const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer()),fontExtraProperties:true}).promise,P=mkParser7(),fonts={};let nb=0;
+ for(let n=1;n<=pdf.numPages;n++){if(st)st.textContent='File '+idx+' di '+tot+' · pagina '+n+' di '+pdf.numPages+'…';
+  const pg=await pdf.getPage(n),tc=await pg.getTextContent();
+  const need=[...new Set(tc.items.filter(t=>t.fontName&&!(t.fontName in fonts)).map(t=>t.fontName))];
+  if(need.length){try{await pg.getOperatorList()}catch(e){}
+   for(const id of need){let nm='';try{const o=pg.commonObjs.get(id);nm=(o&&(o.name||o.fallbackName))||''}catch(e){}fonts[id]=nm}}
+  P.page(tc.items.filter(t=>t.str!==undefined&&t.transform).map(t=>{const f=fonts[t.fontName]||'',b=BR.test(f);if(b)nb++;return{str:t.str,x:t.transform[4],y:t.transform[5],h:Math.hypot(t.transform[2],t.transform[3]),w:t.width||0,b,f}}))}
+ return{P,nb}}
+async function importPdf(files){
+ if(typeof pdfjsLib==='undefined'){alert('Il lettore PDF è disponibile solo nell\'app installata (APK o WebApp), non in questa anteprima.');return}
+ const st=document.getElementById('imps'),out=[];
+ try{pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js';
+  for(let i=0;i<files.length;i++){const f=files[i],s=srcOf(f.name);
+   try{const{P,nb}=await readPdf(f,st,i+1,files.length),r=P.result();
+    const nl_=Object.values(r.lists).reduce((a,l)=>a+l.items.length,0);
+    if(!r.bg.length&&!r.adv.length&&!r.arc.length&&!nl_){out.push(f.name+': nessun contenuto riconosciuto (è un manuale di 7th Sea 2ª edizione?)');continue}
+    CAT.bg=mrg(CAT.bg,r.bg,s,x=>x.naz+'|'+x.n.toLowerCase());
+    CAT.adv=mrg(CAT.adv,r.adv,s,x=>x.n.toLowerCase());
+    CAT.arc=mrg(CAT.arc,r.arc,s,x=>x.carta.toLowerCase());
+    Object.assign(CAT.nat,r.nat);
+    for(const k in r.lists){const o=CAT.lists[k];CAT.lists[k]={t:r.lists[k].t,items:mrg(o&&o.items,r.lists[k].items,s,x=>x.n.toLowerCase())}}
+    CAT.v=1;localStorage.setItem(CK,JSON.stringify(CAT));
+    out.push(s+': '+r.bg.length+' background, '+r.adv.length+' vantaggi, '+r.arc.length+' arcani, '+nl_+' voci di stregoneria e stili'+(nb?'':' — ATTENZIONE: grassetto non rilevato, il risultato potrebbe essere incompleto'))}
+   catch(e){out.push(f.name+': errore nella lettura ('+(e&&e.message||e)+')')}}
+  alert(out.join('\n'))}
+ catch(x){alert('Errore nella lettura del PDF: '+(x&&x.message||x))}
+ render()}
+function catCard(){const nl_=Object.values(CAT.lists).reduce((a,l)=>a+l.items.length,0);
+ return `<div class="card"><h2>Manuali</h2><p class="mut">Importa i PDF dei tuoi manuali di 7th Sea (Base e supplementi, anche più file insieme): vengono letti sul dispositivo e restano salvati solo qui. Più manuali si sommano nello stesso catalogo.</p><div class="row"><input type="file" id="pdf" accept="application/pdf" multiple style="max-width:260px"><button class="x" data-act="clrcat">Cancella catalogo</button></div><div class="hint" id="imps">${CAT.v?CAT.bg.length+' background, '+CAT.adv.length+' vantaggi, '+CAT.arc.length+' arcani, '+nl_+' voci di stregoneria e stili':'Catalogo vuoto'}</div></div>`}
+const fltCard=()=>CAT.v?`<div class="card"><input id="flt" type="search" placeholder="Cerca per nome nel catalogo…" value="${esc(FLT)}"></div>`:'';
+// ---------- regole ----------
+const dots=(n,m)=>'<span class="dots">'+Array.from({length:m},(_,i)=>`<i class="${i<n?'f':''}"></i>`).join('')+'</span>';
+const rkNote=r=>r>=5?'i 10 esplodono':r>=4?'2 Incrementi con somma 15':r>=3?'rilancia 1 dado':'';
+const drm=c=>c.fer.reduce((a,v,i)=>a+(v&&i%5==4?1:0),0),wnd=c=>c.fer.reduce((a,v)=>a+(v?1:0),0);
+const hasAdv=(c,n)=>c.adv.some(a=>a.n.toLowerCase()==n.toLowerCase());
+const effects=c=>{const d=drm(c),m=hasAdv(c,'Duro da Uccidere')?5:4,o=[];
+ if(d>=1)o.push('1 Dado Bonus su tutti i Rischi');
+ if(d>=2)o.push((hasAdv(c,'Duro da Uccidere')?'3':'2')+' Dadi Bonus ai Malvagi contro di te');
+ if(d>=3)o.push('i tuoi 10 esplodono');
+ if(d>=m)o.push('INERME');return o};
+function spiral(c,rb){let h='<div class="sp">';for(let r=0;r<4;r++){h+='<div class="sr">';for(let k=0;k<5;k++){const i=r*5+k,st=k==4;h+=`<button class="${st?'st ':''}${c.fer[i]?'f':''}" data-act="fer" data-i="${i}"${rb?'':''}>${st?'<span>★</span>':''}</button>`}h+='</div>'}return h+'</div>'}
+const skillRows=c=>SKL.map(s=>{const r=c.ab[s]||0;return `<div class="rk"><b style="flex:1">${s}</b><span class="hint">${rkNote(r)}</span><button class="o" data-act="sk" data-k="${esc(s)}" data-d="-1">−</button><b style="min-width:18px;text-align:center">${r}</b><button class="o" data-act="sk" data-k="${esc(s)}" data-d="1">+</button></div>`}).join('');
+const trSum=c=>TR.reduce((a,[k])=>a+(+c.tr[k]||0),0);
+function applyBg(c,b){const bg={n:b.n,naz:b.naz||'',pec:b.pec||'',ap:1};
+ (b.abil||[]).forEach(s=>{c.ab[s]=Math.min(5,(c.ab[s]||0)+1)});
+ (b.vant||[]).forEach(v=>{const a=advF(v)||{};if(!hasAdv(c,v)||/^Stregoneria/i.test(v))c.adv.push({n:v,c:0,src:'bg',nota:''})});
+ c.bg.push(bg)}
+// ---------- sezioni ----------
+const SECS=[
+()=>`<div class="card"><h2>Eroe</h2><div class="g2">${I('c.nome','Nome')}<div><label>Nazione</label><select data-p="c.naz" data-rc><option value=""></option>${[...new Set([...nazList(),S.c.naz].filter(Boolean))].map(n=>`<option ${n==S.c.naz?'selected':''}>${esc(n)}</option>`).join('')}</select></div></div>${S.c.naz&&CAT.nat[S.c.naz]?`<p class="hint">Bonus di nazione: ${esc(CAT.nat[S.c.naz])}</p>`:''}</div><div class="card"><h2>Concetto</h2><div class="g2">${T('c.conc','Concetto e personalità (le 20 domande)')}${T('c.asp','Aspetto e modi di fare')}${T('c.mot','Motivazione, ambizione e paure')}</div></div>`,
+()=>{const c=S.c,t=trSum(c);return `<div class="card"><h2>Tratti</h2><div class="g">${TR.map(([k,n])=>`<div class="stat"><label>${n}</label><div class="cur" style="justify-content:center"><button class="o" data-act="tr" data-k="${k}" data-d="-1">−</button><b class="big">${c.tr[k]}</b><button class="o" data-act="tr" data-k="${k}" data-d="1">+</button></div></div>`).join('')}</div><p class="hint">Gradi totali: ${t} (alla creazione: 10 base + 2 da spendere + 1 di nazione = 13; massimo 15, nessun Tratto sopra 5 o sotto 2).</p></div><div class="card"><h2>Abilità</h2>${skillRows(c)}<p class="hint">Alla creazione: 10 punti da distribuire, massimo Grado 3 (i Background danno Grado 1). Grado 3 rilancio di un dado, Grado 4 Incremento a 15, Grado 5 i 10 esplodono. Le Abilità raggiungono al massimo il Grado 5.</p></div>`},
+()=>{const c=S.c,own=c.adv.filter(a=>a.src!='bg').reduce((s,a)=>s+(+a.c||0),0);
+ const nz=bgSel,bgs=CAT.bg.filter(b=>!nz||(b.naz||'-')==nz),nzs=[...new Set(CAT.bg.map(b=>b.naz||'-'))];
+ return `${catCard()}${fltCard()}<div class="card"><h2>Background (ne servono due)</h2>${c.bg.map((b,i)=>{const f=bgF(b.n,b.naz)||{};return `<div class="item"><b class="wn">${esc(b.n)}</b>${b.naz?` <span class="chip">${esc(b.naz)}</span>`:''}<div class="hint">Peculiarità (+1 Punto Eroe quando la interpreti, una volta a sessione)</div><textarea data-p="c.bg.${i}.pec">${esc(b.pec)}</textarea>${f.d?`<details><summary class="mut">Descrizione</summary><p>${nl(f.d)}</p></details>`:''}<button class="x" data-act="delbg" data-i="${i}">Rimuovi</button></div>`}).join('')||'<p class="mut">Nessun background.</p>'}
+ ${CAT.bg.length?`<div class="row"><div style="flex:1"><label>Filtra per nazione</label><select id="bgn"><option value="">Tutte</option>${nzs.map(n=>`<option value="${esc(n)}" ${n==nz?'selected':''}>${n=='-'?'Base':esc(n)}</option>`).join('')}</select></div></div>${bgs.map(b=>{const i=CAT.bg.indexOf(b),o=c.bg.some(x=>x.n==b.n&&(x.naz||'')==(b.naz||''));return `<div class="mw" data-n="${esc(b.n.toLowerCase())}"${hid(b.n)}><div class="row"><b class="wn" style="flex:1">${esc(b.n)}${b.naz?' · '+esc(b.naz):''}</b><button class="${o?'o':''}" data-act="addbg" data-i="${i}" ${o?'disabled':''}>${o?'✓ Scelto':'+ Scegli'}</button></div><div class="hint">${esc(b.d)}</div><div class="hint">Vantaggi: ${esc(b.vant.join(', '))} · Abilità: ${esc(b.abil.join(', '))}${b.s?' · '+esc(b.s):''}</div><details><summary class="mut">Peculiarità</summary><p>${nl(b.pec)}${b.res?'<br><i>'+esc(b.res)+'</i>':''}</p></details></div>`}).join('')}`:`<div class="row"><button class="o" data-act="addbgm">+ Background manuale</button></div>`}</div>
+ <div class="card"><h2>Vantaggi</h2><p class="hint">Punti spesi (esclusi quelli dei Background): ${own} / 5 alla creazione.</p>${c.adv.map((a,i)=>{const f=advF(a.n)||{};return `<div class="item"><div class="row"><b class="wn" style="flex:1">${esc(a.n)}</b>${a.src=='bg'?'<span class="chip">Background</span>':''}<div style="width:70px"><label>Costo</label><input type="number" data-p="c.adv.${i}.c" value="${a.c}"></div></div>${f.cn?`<div class="hint">Costo per nazione: ${esc(f.cn)}</div>`:''}<input type="text" data-p="c.adv.${i}.nota" value="${esc(a.nota||'')}" placeholder="Note (es. scelte, Abilità, nome)">${f.d?`<details><summary class="mut">Descrizione</summary><p>${nl(f.d)}</p></details>`:''}<button class="x" data-act="deladv" data-i="${i}">Rimuovi</button></div>`}).join('')}<button class="o" data-act="addadvm">+ Vantaggio manuale</button></div>
+ ${CAT.adv.length?`<div class="card"><h2>Vantaggi dal catalogo</h2><label>Costo</label><select id="advc"><option value="0">Tutti</option>${[1,2,3,4,5].map(n=>`<option ${advC==n?'selected':''} value="${n}">${n} ${n==1?'punto':'punti'}</option>`).join('')}</select>${CAT.adv.filter(a=>advC=='0'||a.c==advC).map(a=>{const i=CAT.adv.indexOf(a),o=hasAdv(c,a.n);return `<div class="mw" data-n="${esc(a.n.toLowerCase())}"${hid(a.n)}><div class="row"><b class="wn" style="flex:1">${esc(a.n)} <span class="chip">${a.c} pt${a.cn?' · '+esc(a.cn):''}</span></b><button class="${o?'o':''}" data-act="addadv" data-i="${i}">${o?'+ Ancora':'+ Aggiungi'}</button></div>${a.req?`<div class="hint">${esc(a.req)}</div>`:''}<details><summary class="mut">Descrizione${a.s?' · '+esc(a.s):''}</summary><p>${nl(a.d)}</p></details></div>`}).join('')}</div>`:''}`},
+()=>{const c=S.c;return `<div class="card"><h2>Arcani</h2><p class="hint">Una Virtù (si usa una volta a sessione) e una Hubris (quando la attivi guadagni 1 Punto Eroe). Possono venire da carte diverse.</p>${CAT.arc.length?`<div class="g2"><div><label>Virtù</label><select id="virt"><option value=""></option>${CAT.arc.map((a,i)=>`<option value="${i}" ${a.v==c.virt.n&&a.carta==c.virt.carta?'selected':''}>${esc(a.v)} (${esc(a.carta)})</option>`).join('')}</select></div><div><label>Hubris</label><select id="hub"><option value=""></option>${CAT.arc.map((a,i)=>`<option value="${i}" ${a.h==c.hub.n&&a.carta==c.hub.carta?'selected':''}>${esc(a.h)} (${esc(a.carta)})</option>`).join('')}</select></div></div>`:`<div class="g2">${I('c.virt.n','Virtù')}${I('c.hub.n','Hubris')}</div><p class="mut">Importa il manuale (in Background e Vantaggi) per scegliere dal catalogo.</p>`}
+ ${(()=>{const v=CAT.arc.find(a=>a.v==c.virt.n&&a.carta==c.virt.carta),h=CAT.arc.find(a=>a.h==c.hub.n&&a.carta==c.hub.carta);return (v?`<div class="mw"><b class="wn">Virtù: ${esc(v.v)}</b><p>${nl(v.vd)}</p></div>`:'')+(h?`<div class="mw"><b class="wn">Hubris: ${esc(h.h)}</b><p>${nl(h.hd)}</p></div>`:'')})()}</div>
+ <div class="card"><h2>Storie</h2><p class="hint">Una Storia ha un Obiettivo (conclusione e ricompensa) e degli Atti. Ricompense: Abilità = Atti pari al nuovo Grado; Vantaggio = Atti pari al costo; Peculiarità 3; Arcano 4; spostare un Grado di Tratto 4; +1 Tratto 5.</p>${c.storie.map((s,i)=>`<div class="item">${I(`c.storie.${i}.tema`,'Tema (titolo)')}${T(`c.storie.${i}.concl`,'Conclusione')}${I(`c.storie.${i}.ric`,'Ricompensa')}<label style="margin-top:6px">Atti</label>${s.atti.map((a,j)=>`<div class="row" style="margin-top:4px"><label class="pill"><input type="checkbox" data-p="c.storie.${i}.atti.${j}.d" ${a.d?'checked':''}> ${j+1}</label><input type="text" style="flex:1" data-p="c.storie.${i}.atti.${j}.t" value="${esc(a.t)}" placeholder="Atto ${j+1}"><button class="x" data-act="delatto" data-i="${i}" data-j="${j}">✕</button></div>`).join('')}<div class="row" style="margin-top:6px"><button class="o" data-act="addatto" data-i="${i}">+ Atto</button><button class="x" data-act="delstoria" data-i="${i}">Rimuovi storia</button></div></div>`).join('')}<button class="o" data-act="addstoria">+ Nuova Storia</button></div>`},
+()=>{const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);return `<div class="card"><h2>Dettagli</h2><div class="g2">${I('c.fama','Fama (un aggettivo)')}${I('c.ling','Lingue (una per Grado di Acume: '+c.tr.acu+')')}${I('c.soc','Società Segreta')}${I('c.fav','Favore verso la società','number')}${I('c.ric','Ricchezza (punti a inizio sessione)','number')}</div></div>
+ <div class="card"><h2>Ferite · Spirale della Morte</h2><div class="row" style="align-items:center">${spiral(c)}<div style="flex:1"><div class="big">${w} <span class="hint">Ferite</span> · ${d} <span class="hint">★ Drammatiche</span></div>${ef.length?ef.map(e=>`<div class="${e=='INERME'?'crisi':'hint'}">• ${e}</div>`).join(''):'<div class="hint">Nessun effetto.</div>'}<div class="row" style="margin-top:8px"><button class="o" data-act="ferclr">Azzera ferite</button></div></div></div><p class="hint">Tocca una casella per riempire la spirale fino a lì; toccala di nuovo per svuotare da lì in poi. Le stelle sono le Ferite Drammatiche.</p></div>`},
+()=>{const c=S.c,L=CAT.lists,ks=Object.keys(L);if(ks.length&&!L[lsSel])lsSel=ks[0];
+ return `${CAT.v?catCard():''}${fltCard()}<div class="card"><h2>Stregonerie, Stili di Duello e altro</h2>${c.pot.map((p,i)=>`<div class="item"><div class="row"><b class="wn" style="flex:1">${esc(p.n)}</b><span class="chip">${esc(p.k||'')}</span></div><input type="text" data-p="c.pot.${i}.nota" value="${esc(p.nota||'')}" placeholder="Grado / note">${p.d?`<details><summary class="mut">Descrizione</summary><p>${nl(p.d)}</p></details>`:''}<button class="x" data-act="delpot" data-i="${i}">Rimuovi</button></div>`).join('')||'<p class="mut">Nulla di scelto.</p>'}<button class="o" data-act="addpotm">+ Voce manuale</button></div>
+ ${ks.length?`<div class="card"><h2>Dal catalogo</h2><select id="lsc">${ks.map(k=>`<option value="${esc(k)}" ${k==lsSel?'selected':''}>${esc(L[k].t)}</option>`).join('')}</select>${L[lsSel].items.map((it,j)=>{const o=c.pot.some(p=>p.n==it.n&&p.k==L[lsSel].t);return `<div class="mw" data-n="${esc(it.n.toLowerCase())}"${hid(it.n)}><div class="row"><b class="wn" style="flex:1">${esc(it.n)}</b><button class="${o?'o':''}" data-act="addpot" data-j="${j}" ${o?'disabled':''}>${o?'✓ Aggiunto':'+ Aggiungi'}</button></div>${it.r?`<div class="hint">${esc(it.r)}</div>`:''}<details><summary class="mut">Descrizione${it.s?' · '+esc(it.s):''}</summary><p>${nl(it.d)}</p></details></div>`}).join('')}</div>`:`<div class="card"><p class="mut">Importa i manuali (in <b>Background e Vantaggi</b>) per avere le liste di stregonerie e stili di duello.</p></div>`}`},
+()=>`<div class="card"><h2>Armi e oggetti importanti</h2>${S.c.arm.map((a,i)=>`<div class="item"><div class="g2">${I(`c.arm.${i}.n`,'Nome')}${T(`c.arm.${i}.d`,'Descrizione ed effetti')}</div><button class="x" data-act="delarm" data-i="${i}">Rimuovi</button></div>`).join('')}<button class="o" data-act="addarm">+ Aggiungi</button></div><div class="card"><h2>Nave</h2>${T('c.nave','Nome, Background e dettagli della nave')}</div><div class="card"><h2>Note</h2>${T('c.note','Note')}</div><div class="card"><button class="x" data-act="reset">Azzera questa scheda</button></div>`];
+function riep(){const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);
+ const box=(l,v,i)=>`<div class="mb"><span>${l}</span><b>${v}</b>${i?`<i>${i}</i>`:''}</div>`;
+ const sk=SKL.filter(s=>c.ab[s]>0);
+ const v=CAT.arc.find(a=>a.v==c.virt.n&&a.carta==c.virt.carta),h=CAT.arc.find(a=>a.h==c.hub.n&&a.carta==c.hub.carta);
+ return `<div class="card ms"><div class="mn">${esc(c.nome||'Senza nome')}</div><div class="mut">${esc([c.naz,c.fama].filter(Boolean).join(' · '))}</div>${c.conc?`<p>${nl(c.conc)}</p>`:''}
+ <h3>Tratti</h3><div class="mg">${TR.map(([k,n])=>box(n,c.tr[k])).join('')}</div>
+ <h3>Punti Eroe e Ferite</h3><div class="mg"><div class="mb"><span>Punti Eroe</span><div class="cur"><button class="o" data-act="adj" data-p="c.ph" data-d="-1">−</button><input type="number" data-p="c.ph" value="${c.ph}"><button class="o" data-act="adj" data-p="c.ph" data-d="1">+</button></div></div>${box('Ferite',w+'/20')}${box('Drammatiche',d+'/'+(hasAdv(c,'Duro da Uccidere')?5:4))}${box('Ricchezza',c.ric)}</div>
+ <div style="margin-top:8px">${spiral(c)}</div>${ef.map(e=>`<div class="${e=='INERME'?'crisi':'hint'}">• ${e}</div>`).join('')}
+ <h3>Abilità</h3>${sk.map(s=>`<div class="rk"><b>${s}</b><span>${dots(c.ab[s],5)} <span class="hint">${rkNote(c.ab[s])}</span></span></div>`).join('')||'<p class="mut">Nessuna Abilità.</p>'}
+ <h3>Background</h3>${c.bg.map(b=>{const f=bgF(b.n,b.naz)||{};return `<div class="mw"><b class="wn">${esc(b.n)}</b>${b.naz?' · '+esc(b.naz):''}${f.d?`<div class="hint">${esc(f.d)}</div>`:''}<p><i>Peculiarità:</i> ${esc(b.pec)}</p></div>`}).join('')||'<p class="mut">Nessuno.</p>'}
+ <h3>Vantaggi</h3>${c.adv.map(a=>{const f=advF(a.n)||{};return `<div class="mw"><b class="wn">${esc(a.n)}</b>${a.nota?' ('+esc(a.nota)+')':''}${f.d?`<p>${nl(f.d)}</p>`:''}</div>`}).join('')||'<p class="mut">Nessuno.</p>'}
+ <h3>Arcani</h3>${v?`<div class="mw"><b class="wn">Virtù: ${esc(v.v)}</b> (${esc(v.carta)})<p>${nl(v.vd)}</p></div>`:''}${h?`<div class="mw"><b class="wn">Hubris: ${esc(h.h)}</b> (${esc(h.carta)})<p>${nl(h.hd)}</p></div>`:''}${!v&&!h?`<p>${esc([c.virt.n&&'Virtù: '+c.virt.n,c.hub.n&&'Hubris: '+c.hub.n].filter(Boolean).join(' · '))||'<span class="mut">Nessuno.</span>'}</p>`:''}
+ ${c.pot.length?'<h3>Stregoneria e Stili</h3>'+c.pot.map(p=>`<div class="mw"><b class="wn">${esc(p.n)}</b> <span class="chip">${esc(p.k||'')}</span>${p.nota?' ('+esc(p.nota)+')':''}${p.d?`<p>${nl(p.d)}</p>`:''}</div>`).join(''):''}
+ <h3>Storie</h3>${c.storie.filter(s=>s.tema||s.concl).map(s=>`<div class="mw"><b class="wn">${esc(s.tema)}</b>${s.concl?`<p><i>Conclusione:</i> ${esc(s.concl)}</p>`:''}${s.ric?`<p><i>Ricompensa:</i> ${esc(s.ric)}</p>`:''}${s.atti.map((a,j)=>`<div>${a.d?'☑':'☐'} Atto ${j+1}: ${esc(a.t)}</div>`).join('')}</div>`).join('')||'<p class="mut">Nessuna.</p>'}
+ <h3>Dettagli</h3><p>${[c.ling&&'<b>Lingue:</b> '+esc(c.ling),c.soc&&'<b>Società:</b> '+esc(c.soc)+' (Favore '+c.fav+')'].filter(Boolean).join('<br>')||'<span class="mut">—</span>'}</p>
+ ${c.arm.filter(a=>a.n||a.d).length?'<h3>Oggetti</h3>'+c.arm.filter(a=>a.n||a.d).map(a=>`<div class="mw"><b class="wn">${esc(a.n)}</b>${a.d?`<p>${nl(a.d)}</p>`:''}</div>`).join(''):''}${c.nave?`<h3>Nave</h3><p>${nl(c.nave)}</p>`:''}</div>`}
+function gm(){const g=S.gm;return `<div class="card"><h2>Riserva di Pericolo</h2><div class="cur" style="justify-content:center"><button class="o" data-act="adj" data-p="gm.pp" data-d="-1">−</button><input type="number" data-p="gm.pp" value="${g.pp}" style="width:90px;font-size:22px"><button class="o" data-act="adj" data-p="gm.pp" data-d="1">+</button></div><p class="hint">All'inizio di ogni sessione il GM ha 1 Punto Pericolo per ogni Eroe (${S.chars.length} salvati).</p><div class="row" style="justify-content:center"><button class="o" data-act="ppreset">Imposta = numero di Eroi</button></div></div>
+ <div class="card"><h2>Storie del GM</h2>${g.storie.map((s,i)=>`<div class="item">${I(`gm.storie.${i}.t`,'Titolo')}${T(`gm.storie.${i}.c`,'Conclusione e ricompensa')}<label style="margin-top:6px">Atti</label>${s.atti.map((a,j)=>`<div class="row" style="margin-top:4px"><label class="pill"><input type="checkbox" data-p="gm.storie.${i}.atti.${j}.d" ${a.d?'checked':''}> ${j+1}</label><input type="text" style="flex:1" data-p="gm.storie.${i}.atti.${j}.t" value="${esc(a.t)}"><button class="x" data-act="gdelatto" data-i="${i}" data-j="${j}">✕</button></div>`).join('')}<div class="row" style="margin-top:6px"><button class="o" data-act="gaddatto" data-i="${i}">+ Atto</button><button class="x" data-act="gdelst" data-i="${i}">Rimuovi</button></div></div>`).join('')}<button class="o" data-act="gaddst">+ Nuova Storia del GM</button></div>
+ <div class="card"><h2>Note del GM</h2>${T('gm.note','Malvagi, Squadre di Sgherri, segreti…')}</div>`}
+function doImport(rep){const el=document.getElementById('bk');try{const j=JSON.parse(el.value.trim());if(!j||!Array.isArray(j.chars))throw 0;
+ const ch=j.chars.map(c=>Object.assign(JSON.parse(JSON.stringify(def().c)),c));
+ if(rep){if(!confirm('Sostituire tutti gli Eroi attuali?'))return false;S.chars=ch;if(j.gm)S.gm=j.gm;S.cur=null;S.c=null}
+ else{S.chars.push(...ch)}
+ alert('Importati '+ch.length+' eroi');return true}catch(x){alert('Testo non valido: incolla il codice esportato dall\'app.');return false}}
+function home(){const n=S.chars.length;return `<div class="card"><div class="row"><button data-act="new">+ Nuovo Eroe</button><span class="mut">${n} ${n==1?'eroe':'eroi'}</span></div></div><div class="g2">`+S.chars.map((c,i)=>`<div class="card"><div data-act="open" data-i="${i}" style="cursor:pointer"><div class="big" style="font-size:20px">${esc(c.nome||'Senza nome')}</div><div class="mut">${esc([c.naz,c.fama].filter(Boolean).join(' · '))||'—'}</div><p>Ferite <b>${wnd(c)}</b> · ★ <b>${drm(c)}</b> · Punti Eroe <b>${c.ph}</b></p></div><div class="row"><button data-act="open" data-i="${i}">Apri</button><button class="o" data-act="dup" data-i="${i}">Duplica</button><button class="x" data-act="chdel" data-i="${i}">Elimina</button></div></div>`).join('')+`</div>`+(n?'':'<p class="mut">Nessun Eroe: creane uno per iniziare.</p>')+`<div class="card" style="margin-top:12px"><h2>Backup e trasferimento</h2><p class="mut">Esporta per ottenere un codice con tutti gli Eroi, poi incollalo su un altro dispositivo e importa.</p><div class="row"><button data-act="exp">Esporta</button><button class="o" data-act="copy">Copia</button></div><textarea id="bk" placeholder="Qui compare il codice esportato. Per importare, incollalo qui." style="margin-top:8px;min-height:90px"></textarea><div class="row" style="margin-top:6px"><button class="o" data-act="imp">Importa (aggiungi)</button><button class="x" data-act="impr">Importa (sostituisci tutto)</button></div></div>`}
+function render(){if((tab=='sheet'||tab=='riep')&&!S.c)tab='home';const A=document.getElementById('app');A.innerHTML=tab=='home'?home():tab=='sheet'?SECS[sec]():tab=='riep'?riep():gm();
+ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v==tab));
+ document.getElementById('nav').innerHTML=tab=='sheet'?SEC.map((n,i)=>`<button class="tab ${i==sec?'on':''}" data-act="s" data-i="${i}">${i+1}. ${n}</button>`).join(''):'';
+ document.getElementById('fpbar').style.display=S.c&&tab!='home'&&tab!='gm'?'flex':'none';document.getElementById('fpbar').innerHTML=`<b>⭐ Punti Eroe · ${S.c?esc(S.c.nome||'Senza nome'):''}</b><button class="o" data-act="adj" data-p="c.ph" data-d="-1">−</button><input type="number" data-p="c.ph" value="${S.c?S.c.ph:0}"><button class="o" data-act="adj" data-p="c.ph" data-d="1">+</button>`;
+ save()}
+document.addEventListener('input',e=>{const t=e.target,p=t.dataset.p;
+ if(t.id=='flt'){FLT=t.value.trim().toLowerCase();document.querySelectorAll('.mw[data-n]').forEach(r=>{r.style.display=!FLT||r.dataset.n.includes(FLT)?'':'none'});return}
+ if(!p)return;
+ put(p,t.type=='checkbox'?(t.checked?1:0):(t.type=='number')?Number(t.value)||0:t.value);
+ if(p=='c.ph'){document.querySelectorAll('input[data-p="c.ph"]').forEach(x=>{if(x!==t)x.value=t.value})}
+ if(t.dataset.rc!==undefined){render();return}save()});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.id=='bgn'){bgSel=t.value;render();return}if(t.id=='advc'){advC=t.value;render();return}if(t.id=='lsc'){lsSel=t.value;render();return}
+ if(t.id=='virt'||t.id=='hub'){const a=CAT.arc[+t.value],k=t.id;if(a){S.c[k]=k=='virt'?{n:a.v,carta:a.carta}:{n:a.h,carta:a.carta}}else S.c[k]={n:'',carta:''};render();return}
+ if(t.id=='pdf'&&t.files.length)importPdf([...t.files])});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t)return;e.preventDefault();const a=t.dataset.act,i=+t.dataset.i,j=+t.dataset.j,d=+t.dataset.d,c=S.c;
+ const bk=document.getElementById('bk'),dump=()=>JSON.stringify({ss:1,chars:S.chars,gm:S.gm});
+ if(a=='exp'){bk.value=dump();bk.focus();bk.select();return}
+ if(a=='copy'){if(!bk.value)bk.value=dump();bk.select();try{navigator.clipboard.writeText(bk.value)}catch(x){}try{document.execCommand('copy')}catch(x){}alert('Codice copiato');return}
+ if(a=='imp'||a=='impr'){if(!doImport(a=='impr'))return}
+ else if(a=='tab')tab=(t.dataset.v!='home'&&t.dataset.v!='gm'&&!S.c)?'home':t.dataset.v;
+ else if(a=='new'){S.chars.push(def().c);S.cur=S.chars.length-1;S.c=S.chars[S.cur];tab='sheet';sec=0}
+ else if(a=='open'){S.cur=i;S.c=S.chars[i];tab='sheet';sec=0}
+ else if(a=='dup'){const n=JSON.parse(JSON.stringify(S.chars[i]));n.nome=(n.nome||'Senza nome')+' (copia)';S.chars.push(n)}
+ else if(a=='chdel'){if(!confirm('Eliminare questo Eroe?'))return;S.chars.splice(i,1);if(S.cur===i){S.cur=null;S.c=null}else if(S.cur>i)S.cur--}
+ else if(a=='s'){sec=i;tab='sheet'}
+ else if(a=='adj')put(t.dataset.p,Math.max(0,(Number(get(t.dataset.p))||0)+d));
+ else if(a=='tr'){const k=t.dataset.k;c.tr[k]=Math.min(5,Math.max(2,c.tr[k]+d))}
+ else if(a=='sk'){const k=t.dataset.k;c.ab[k]=Math.min(5,Math.max(0,(c.ab[k]||0)+d))}
+ else if(a=='fer'){c.fer=c.fer.slice();if(c.fer[i]){for(let k=i;k<20;k++)c.fer[k]=0}else{for(let k=0;k<=i;k++)c.fer[k]=1}}
+ else if(a=='ferclr')c.fer=Array(20).fill(0);
+ else if(a=='addbg'){const b=CAT.bg[i];applyBg(c,b)}
+ else if(a=='addbgm')c.bg.push({n:'Nuovo background',naz:'',pec:''});
+ else if(a=='delbg')c.bg.splice(i,1);
+ else if(a=='addadv'){const x=CAT.adv[i];c.adv.push({n:x.n,c:x.c,src:'acq',nota:''})}
+ else if(a=='addadvm')c.adv.push({n:'Nuovo vantaggio',c:1,src:'acq',nota:''});
+ else if(a=='deladv')c.adv.splice(i,1);
+ else if(a=='addstoria')c.storie.push({tema:'',concl:'',ric:'',atti:[{t:'',d:0}]});
+ else if(a=='delstoria')c.storie.splice(i,1);
+ else if(a=='addatto')c.storie[i].atti.push({t:'',d:0});
+ else if(a=='delatto')c.storie[i].atti.splice(j,1);
+ else if(a=='addpot'){const L=CAT.lists[lsSel],it=L.items[j];c.pot.push({n:it.n,k:L.t,d:it.d,nota:''})}
+ else if(a=='addpotm')c.pot.push({n:'Nuova voce',k:'',d:'',nota:''});
+ else if(a=='delpot')c.pot.splice(i,1);
+ else if(a=='addarm')c.arm.push({n:'',d:''});
+ else if(a=='delarm')c.arm.splice(i,1);
+ else if(a=='ppreset')S.gm.pp=S.chars.length;
+ else if(a=='gaddst')S.gm.storie.push({t:'',c:'',atti:[{t:'',d:0}]});
+ else if(a=='gdelst')S.gm.storie.splice(i,1);
+ else if(a=='gaddatto')S.gm.storie[i].atti.push({t:'',d:0});
+ else if(a=='gdelatto')S.gm.storie[i].atti.splice(j,1);
+ else if(a=='clrcat'){if(confirm('Cancellare il catalogo importato?')){CAT={v:0,bg:[],adv:[],arc:[],nat:{},lists:{}};localStorage.removeItem(CK)}else return}
+ else if(a=='reset'){if(confirm('Azzerare questa scheda?')){S.chars[S.cur]=def().c;S.c=S.chars[S.cur]}else return}
+ render()});
+render();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')&&location.hostname!=='localhost')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
