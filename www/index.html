@@ -509,7 +509,8 @@ const fltCard=()=>CAT.v?`<div class="card"><input id="flt" type="search" placeho
 const dots=(n,m)=>'<span class="dots">'+Array.from({length:m},(_,i)=>`<i class="${i<n?'f':''}"></i>`).join('')+'</span>';
 const edots=(t,k,n,m)=>'<span class="dots ed">'+Array.from({length:m},(_,x)=>`<i class="${x<n?'f':''}" data-act="dot" data-t="${t}" data-k="${esc(String(k))}" data-v="${x+1}"></i>`).join('')+'</span>';
 const rkNote=r=>r>=5?'i 10 esplodono':r>=4?'2 Incrementi con somma 15':r>=3?'rilancia 1 dado':'';
-const drm=c=>c.fer.reduce((a,v,i)=>a+(v&&i%5==4?1:0),0),wnd=c=>c.fer.reduce((a,v)=>a+(v?1:0),0);
+const FR=c=>c.adv&&c.adv.some(a=>String(a.n).toLowerCase()=='duro da uccidere')?5:4,fa=c=>{if(c.fer.length<25)c.fer=c.fer.concat(Array(25-c.fer.length).fill(0));return c.fer.slice(0,FR(c)*5)};
+const drm=c=>fa(c).reduce((a,v,i)=>a+(v&&i%5==4?1:0),0),wnd=c=>fa(c).reduce((a,v)=>a+(v?1:0),0);
 const hasSala=c=>c.adv.some(a=>/sala d.\s?arm/i.test(a.n||''));
 const MANORD=['Fendente','Botta','Parata','Risposta','Finta','Affondo'];
 function manH(c){return manX(c.ab['Mischia']||0,'Concesse da Sala d’Armi')}
@@ -519,7 +520,7 @@ const effects=c=>{const d=drm(c),m=hasAdv(c,'Duro da Uccidere')?5:4,o=[];
  if(d>=2)o.push((hasAdv(c,'Duro da Uccidere')?'3':'2')+' Dadi Bonus ai Malvagi contro di te');
  if(d>=3)o.push('i tuoi 10 esplodono');
  if(d>=m)o.push('INERME');return o};
-function spiral(c,rb){let h='<div class="sp">';for(let r=0;r<4;r++){h+='<div class="sr">';for(let k=0;k<5;k++){const i=r*5+k,st=k==4;h+=`<button class="${st?'st ':''}${c.fer[i]?'f':''}" data-act="fer" data-i="${i}"${rb?'':''}>${st?'<span>★</span>':''}</button>`}h+='</div>'}return h+'</div>'}
+function spiral(c,rb){fa(c);let h='<div class="sp">';for(let r=0;r<FR(c);r++){h+='<div class="sr">';for(let k=0;k<5;k++){const i=r*5+k,st=k==4;h+=`<button class="${st?'st ':''}${c.fer[i]?'f':''}" data-act="fer" data-i="${i}"${rb?'':''}>${st?'<span>★</span>':''}</button>`}h+='</div>'}return h+'</div>'}
 const skillRows=c=>SKL.map(s=>{const r=c.ab[s]||0;return `<div class="rk"><b style="flex:1">${s}</b><span class="hint">${rkNote(r)}</span><button class="o" data-act="sk" data-k="${esc(s)}" data-d="-1">−</button><b style="min-width:18px;text-align:center">${r}</b><button class="o" data-act="sk" data-k="${esc(s)}" data-d="1">+</button></div>`}).join('');
 const trSum=c=>TR.reduce((a,[k])=>a+(+c.tr[k]||0),0);
 function applyBg(c,b){const bg={n:b.n,naz:b.naz||'',pec:b.pec||'',ap:1};
@@ -552,7 +553,7 @@ function riep(){const c=S.c,d=drm(c),w=wnd(c),ef=effects(c);
  const v=CAT.arc.find(a=>a.v==c.virt.n&&a.carta==c.virt.carta),h=CAT.arc.find(a=>a.h==c.hub.n&&a.carta==c.hub.carta);
  return `<div class="card ms"><div class="mn">${esc(c.nome||'Senza nome')}</div><div class="mut">${esc([c.naz,c.fama].filter(Boolean).join(' · '))}</div>${c.conc?`<p>${nl(c.conc)}</p>`:''}
  <h3>Tratti</h3>${TR.map(([k,n])=>`<div class="rk"><b>${n}</b>${edots('tr',k,c.tr[k],5)}</div>`).join('')}
- <h3>Punti Eroe e Ferite</h3><div class="mg"><div class="mb"><span>Punti Eroe</span><div class="cur"><button class="o" data-act="adj" data-p="c.ph" data-d="-1">−</button><input type="number" data-p="c.ph" value="${c.ph}"><button class="o" data-act="adj" data-p="c.ph" data-d="1">+</button></div></div>${box('Ferite',w+'/20')}${box('Drammatiche',d+'/'+(hasAdv(c,'Duro da Uccidere')?5:4))}${box('Ricchezza',c.ric)}<div class="mb"><span>Incrementi</span><div class="cur"><button class="o" data-act="adj" data-p="c.inc" data-d="-1">−</button><input type="number" data-p="c.inc" value="${c.inc||0}"><button class="o" data-act="adj" data-p="c.inc" data-d="1">+</button></div><i>${c.inc?'<a data-act="incclr" style="cursor:pointer;text-decoration:underline">azzera</a>':'disponibili ora'}</i></div></div>
+ <h3>Punti Eroe e Ferite</h3><div class="mg"><div class="mb"><span>Punti Eroe</span><div class="cur"><button class="o" data-act="adj" data-p="c.ph" data-d="-1">−</button><input type="number" data-p="c.ph" value="${c.ph}"><button class="o" data-act="adj" data-p="c.ph" data-d="1">+</button></div></div>${box('Ferite',w+'/'+FR(c)*5)}${box('Drammatiche',d+'/'+FR(c))}${box('Ricchezza',c.ric)}<div class="mb"><span>Incrementi</span><div class="cur"><button class="o" data-act="adj" data-p="c.inc" data-d="-1">−</button><input type="number" data-p="c.inc" value="${c.inc||0}"><button class="o" data-act="adj" data-p="c.inc" data-d="1">+</button></div><i>${c.inc?'<a data-act="incclr" style="cursor:pointer;text-decoration:underline">azzera</a>':'disponibili ora'}</i></div></div>
  <div style="margin-top:8px">${spiral(c)}</div>${ef.map(e=>`<div class="${e=='INERME'?'crisi':'hint'}">• ${e}</div>`).join('')}
  <h3>Abilità</h3>${SKL.map(s=>`<div class="rk"><b>${s}</b><span>${edots('ab',s,c.ab[s]||0,5)}</span></div>${(c.ab[s]||0)>=3?`<div class="hint" style="text-align:right">${rkNote(c.ab[s])}</div>`:''}`).join('')}${(c.abx||[]).map((x,i)=>`<div class="rk"><b>${esc(x.n||'(senza nome)')}</b><span>${edots('abx',i,+x.v||0,5)}</span></div>`).join('')}
  <h3>Background</h3>${c.bg.map(b=>{const f=bgF(b.n,b.naz)||{};return `<div class="mw"><b class="wn">${esc(b.n||'(senza nome)')}</b>${b.naz?' · '+esc(b.naz):''}${(f.d||b.d)?`<div class="hint">${esc(f.d||b.d)}</div>`:''}<p><i>Peculiarità:</i> ${esc(b.pec)}</p></div>`}).join('')||'<p class="mut">Nessuno.</p>'}
@@ -727,11 +728,12 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(
  else if(a=='dot'){const ty=t.dataset.t,k=t.dataset.k,v=+t.dataset.v;let cu=ty=='tr'?c.tr[k]:ty=='ab'?(c.ab[k]||0):(+c.abx[k].v||0);const mn=ty=='tr'?2:0;let nv=v===cu?v-1:v;nv=Math.min(5,Math.max(mn,nv));if(ty=='tr')c.tr[k]=nv;else if(ty=='ab')c.ab[k]=nv;else c.abx[k].v=nv}
  else if(a=='tr'){const k=t.dataset.k;c.tr[k]=Math.min(5,Math.max(2,c.tr[k]+d))}
  else if(a=='sk'){const k=t.dataset.k;c.ab[k]=Math.min(5,Math.max(0,(c.ab[k]||0)+d))}
- else if(a=='fer'){c.fer=c.fer.slice();const st=i%5==4;
+ else if(a=='fer'){fa(c);c.fer=c.fer.slice();const st=i%5==4,N=FR(c)*5;
   if(st){if(c.fer[i])c.fer[i]=0;else{for(let k=0;k<=i;k++)c.fer[k]=1}}
-  else if(c.fer[i]){for(let k=i;k<20;k++)if(k%5!=4)c.fer[k]=0}
+  else if(c.fer[i]){for(let k=i;k<N;k++)if(k%5!=4)c.fer[k]=0}
   else{for(let k=0;k<=i;k++)c.fer[k]=1}}
- else if(a=='incclr')c.inc=0;
+ else if(a=='ferclr'){fa(c);c.fer=c.fer.map((v,k)=>k%5==4?v:0)}
+ else if(a=='ferdclr'){if(confirm('Rimuovere tutte le Ferite Drammatiche?')){fa(c);c.fer=c.fer.map((v,k)=>k%5==4?0:v)}} else if(a=='incclr')c.inc=0;
  else if(a=='ferclr'){c.fer=c.fer.map((v,k)=>k%5==4?v:0)}
  else if(a=='ferdclr'){if(confirm('Rimuovere tutte le Ferite Drammatiche?'))c.fer=c.fer.map((v,k)=>k%5==4?0:v)}
  else if(a=='addbg'){const b=CAT.bg[i];applyBg(c,b)}

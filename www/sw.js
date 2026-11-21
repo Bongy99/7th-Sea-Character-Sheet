@@ -1,5 +1,5 @@
 // Service worker: rende l'app utilizzabile completamente offline.
-const CACHE = 'seventh-sea-v12';
+const CACHE = 'seventh-sea-v13';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
